@@ -3,6 +3,8 @@ import json
 import os
 import random
 
+# No longer importing build_your_own blueprint - it's standalone now
+
 app = Flask(__name__)
 
 # Load JSON data files
@@ -13,6 +15,68 @@ def load_json_data(filename):
             return json.load(f)
     except FileNotFoundError:
         return {}
+
+# Application content/copy - centralized for easy management
+# In a production app, this could also be stored in JSON files
+APP_COPY = {
+    # Neural network analysis messages
+    "analysis": {
+        "start": "I'm analyzing your request...",
+        "searching": "Searching our AI agent network for the perfect solution for you..."
+    },
+    
+    # Response type messages
+    "response_types": {
+        "match": {
+            "message": "I've found a perfect match for your request in our {category} category!",
+            "followup": {
+                1: "Let me gather some details to help our AI agents create exactly what you need. What platform(s) will this be used on? (Web, Mobile, Desktop)",
+                2: "Great! Let me gather some details for our AI content specialists. What's the target audience for this content?",
+                3: "Perfect! To help our AI creative agents get started, could you describe the style you're looking for? (Modern, Minimalist, Bold, etc.)",
+                4: "Excellent! Let me gather some details to help our business solution agents. What's the primary goal of this project?"
+            }
+        },
+        "partial": {
+            "message": "I've found a partial match in our {category} category. Parts of your request are familiar, but others will require a custom approach.",
+            "followup": {
+                1: "Could you provide more details about the unique aspects of your project that might not be covered by standard solutions?",
+                2: "Your content request has some unique elements. Could you share more about what makes this content different from standard approaches?",
+                3: "Your creative request has some unique aspects. Could you elaborate on what makes this different from typical designs?",
+                4: "Your business solution request has some unique components. Could you provide more details about what makes this different from standard approaches?"
+            }
+        },
+        "new": {
+            "message": "You've discovered new territory! We've never had a request quite like this before.",
+            "followup": "While our developer community works on automating solutions for requests like yours, I've identified some freelance specialists who can help you immediately. Would you like to connect with one of them?"
+        }
+    },
+    
+    # Logo design flow 
+    "logo": {
+        "intro": "Perfect! I've found our logo design specialists. To create the best logo for you, I'll need a few details.",
+        "question": "What industry or business type is this logo for?",
+        "form_intro": "Please fill out these details to help our AI agents create the perfect logo for you:",
+        "generating": "Thanks for the details! I'm generating logo designs from our top AI agents now.",
+        "ready": "Your logo designs are ready! Our 4 AI design agents have each created a different concept. Please select the one you prefer:"
+    },
+    
+    # Solution generation 
+    "solution": {
+        "preparing": "Thanks for the details! I'm preparing your solution now.",
+        "ready": "Your solution is ready! Our 4 AI agents have each created a different approach based on your requirements. Please select the one you prefer:",
+        "hybrid_preparing": "Preparing your hybrid solution now...",
+        "hybrid_ready": "Your hybrid solution is ready! Our AI agents have each created a different approach that combines standard elements with your unique requirements. Please select the one you prefer:"
+    },
+    
+    # Agent selection responses
+    "agent_selection": {
+        "chosen": "Excellent choice! Agent {agent}'s {approach} approach is perfect for your needs. I'll finalize this solution and prepare it for delivery. Agent {agent} has received a ranking boost for creating a solution that matched your preferences!",
+        "followup": "Would you like to make any adjustments to this solution before finalizing?",
+        "perfect": "Wonderful! I'm finalizing your solution now. Is there anything else you'd like help with today?",
+        "changes_prompt": "No problem! What specific adjustments would you like to make to Agent {agent}'s solution?",
+        "human_touch": "No problem! I've found some expert freelancers on Fiverr who specialize in this exact type of work. They can add that human creativity and expertise to take this to the next level:"
+    }
+}
 
 @app.route('/')
 def index():
@@ -124,6 +188,63 @@ def fiverr_sellers():
     sellers = all_freelancers[:2]
     return jsonify(sellers)
 
+@app.route('/api/copy', methods=['GET'])
+def get_copy():
+    """Get application copy text"""
+    section = request.args.get('section')
+    sub_section = request.args.get('sub_section')
+    key = request.args.get('key')
+    
+    if not section:
+        return jsonify(APP_COPY)
+    
+    if section not in APP_COPY:
+        return jsonify({"error": "Section not found"}), 404
+    
+    if not sub_section:
+        return jsonify(APP_COPY[section])
+    
+    if sub_section not in APP_COPY[section]:
+        return jsonify({"error": "Sub-section not found"}), 404
+    
+    if not key:
+        return jsonify(APP_COPY[section][sub_section])
+    
+    if key not in APP_COPY[section][sub_section]:
+        return jsonify({"error": "Key not found"}), 404
+    
+    return jsonify({"text": APP_COPY[section][sub_section][key]})
+
+@app.route('/api/format_copy', methods=['POST'])
+def format_copy():
+    """Get and format application copy with variables"""
+    section = request.json.get('section')
+    sub_section = request.json.get('sub_section')
+    key = request.json.get('key')
+    variables = request.json.get('variables', {})
+    
+    if not all([section, sub_section, key]):
+        return jsonify({"error": "Missing required parameters"}), 400
+    
+    try:
+        # Get the template text
+        template = APP_COPY[section][sub_section][key]
+        
+        # Convert numeric keys to strings if needed
+        if isinstance(template, dict):
+            category_id = variables.get('category_id')
+            if category_id:
+                template = template.get(int(category_id), "")
+        
+        # Format the text with variables
+        formatted_text = template.format(**variables)
+        
+        return jsonify({"text": formatted_text})
+    except KeyError:
+        return jsonify({"error": "Invalid section, sub-section, or key"}), 404
+    except (ValueError, TypeError):
+        return jsonify({"error": "Formatting error"}), 400
+
 @app.route('/api/is_known_territory', methods=['POST'])
 def is_known_territory():
     """Determine if the request is for known territory"""
@@ -201,6 +322,78 @@ def is_known_territory():
             'categoryId': None,
             'confidence': 0
         })
+
+@app.route('/api/generate_response', methods=['POST'])
+def generate_response():
+    """
+    Simulates an AI response generator. In a real app, this would likely use OpenAI's API
+    to generate responses with GPT or another language model.
+    """
+    request_text = request.json.get('text', '')
+    context = request.json.get('context', {})
+    response_type = request.json.get('response_type', 'general')
+    
+    # In a real-world app, this would call an AI service
+    # For now, we'll return templated responses from our APP_COPY
+    
+    if response_type == 'logo':
+        return jsonify({
+            'text': APP_COPY['logo']['generating'],
+            'next_step': 'show_options'
+        })
+    elif response_type == 'agent_selection':
+        agent = context.get('agent', 'Atlas')
+        approach = context.get('approach', 'selected')
+        
+        return jsonify({
+            'text': APP_COPY['agent_selection']['chosen'].format(agent=agent, approach=approach),
+            'followup': APP_COPY['agent_selection']['followup'],
+            'next_step': 'ask_adjustments'
+        })
+    elif response_type == 'match':
+        category_id = context.get('category_id', 1)
+        category_name = getCategoryName(category_id)
+        
+        return jsonify({
+            'text': APP_COPY['response_types']['match']['message'].format(category=category_name),
+            'followup': APP_COPY['response_types']['match']['followup'].get(category_id, ''),
+            'next_step': 'gather_requirements'
+        })
+    elif response_type == 'partial':
+        category_id = context.get('category_id', 1)
+        category_name = getCategoryName(category_id)
+        
+        return jsonify({
+            'text': APP_COPY['response_types']['partial']['message'].format(category=category_name),
+            'followup': APP_COPY['response_types']['partial']['followup'].get(category_id, ''),
+            'next_step': 'gather_details'
+        })
+    elif response_type == 'new':
+        return jsonify({
+            'text': APP_COPY['response_types']['new']['message'],
+            'followup': APP_COPY['response_types']['new']['followup'],
+            'next_step': 'show_discovery'
+        })
+    else:
+        # Generic response for any other type
+        return jsonify({
+            'text': f"Thank you for your message: '{request_text}'. How can I help you further?",
+            'next_step': 'wait_for_input'
+        })
+
+# Helper function to get category name
+def getCategoryName(categoryId):
+    categories = {
+        1: 'Development Services',
+        2: 'Content Creation',
+        3: 'Creative Services',
+        4: 'Business Solutions',
+        5: 'Financial Services'
+    }
+
+    return categories.get(categoryId, 'Unknown Category')
+
+# No longer registering build_your_own blueprint
 
 if __name__ == '__main__':
     app.run(debug=True)

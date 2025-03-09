@@ -101,31 +101,37 @@ function handleRequestSubmission() {
 }
 
 // Analyze user request
-function analyzeRequest(requestText) {
+async function analyzeRequest(requestText) {
     // Add typing indicator
     const typingIndicator = addTypingIndicator();
 
-    // First check if this is known territory
-    fetch('/api/is_known_territory', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text: requestText }),
-    })
-    .then(response => response.json())
-    .then(knownData => {
+    try {
+        // Get analysis text from copy API
+        const analysisText = await CopyAPI.get('analysis', 'start', '');
+        const searchingText = await CopyAPI.get('analysis', 'searching', '');
+        
+        // First check if this is known territory
+        const knownResponse = await fetch('/api/is_known_territory', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text: requestText }),
+        });
+        
+        const knownData = await knownResponse.json();
+        
         // Remove typing indicator
         chatMessages.removeChild(typingIndicator);
         
         // Add first response
-        addMessage('ai', "I'm analyzing your request...");
+        addMessage('ai', analysisText);
 
         // Create neural network widget
         const neuralWidget = createNeuralNetworkWidget();
 
         // Add message with widget
-        addMessage('ai', "Searching our AI agent network for the perfect solution for you...", neuralWidget);
+        addMessage('ai', searchingText, neuralWidget);
 
         // If territory is known, use that data directly
         if (knownData.known) {
@@ -134,29 +140,29 @@ function analyzeRequest(requestText) {
             simulateNeuralNetworkAnalysis(requestText, neuralWidget, responseType, knownData.categoryId);
         } else {
             // If not known, fall back to simpler analysis
-            fetch('/api/analyze_request', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ text: requestText }),
-            })
-            .then(response => response.json())
-            .then(data => {
+            try {
+                const analysisResponse = await fetch('/api/analyze_request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: requestText }),
+                });
+                
+                const data = await analysisResponse.json();
+                
                 // Simulate neural network analysis with basic analysis
                 simulateNeuralNetworkAnalysis(requestText, neuralWidget, data.responseType, data.categoryId);
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error in analyze_request:', error);
                 addMessage('ai', "I'm sorry, there was an error during analysis. Please try again.");
-            });
+            }
         }
-    })
-    .catch(error => {
-        console.error('Error in is_known_territory:', error);
+    } catch (error) {
+        console.error('Error in request analysis:', error);
         chatMessages.removeChild(typingIndicator);
         addMessage('ai', "I'm sorry, there was an error processing your request. Please try again.");
-    });
+    }
 }
 
 // Helper function to get current time string

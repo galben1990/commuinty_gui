@@ -94,92 +94,106 @@ function continueConversation(responseType, categoryId, requestText) {
 }
 
 // Handle Perfect Match Response
-function handleMatchResponse(categoryId, requestText) {
+async function handleMatchResponse(categoryId, requestText) {
     // Check if it's a logo design request
     if (categoryId === 3 && (requestText.toLowerCase().includes('logo') || 
                              requestText.toLowerCase().includes('brand'))) {
         handleLogoRequest(requestText);
     } else {
-        // Generic match response
-        addMessage('ai', `I've found a perfect match for your request in our ${getCategoryName(categoryId)} category!`);
-
-        // Add follow-up questions based on category
-        if (categoryId === 1) { // Development
-            addMessage('ai', "Let me gather some details to help our AI agents create exactly what you need. What platform(s) will this be used on? (Web, Mobile, Desktop)");
-        } else if (categoryId === 2) { // Content
-            addMessage('ai', "Great! Let me gather some details for our AI content specialists. What's the target audience for this content?");
-        } else if (categoryId === 3) { // Creative
-            addMessage('ai', "Perfect! To help our AI creative agents get started, could you describe the style you're looking for? (Modern, Minimalist, Bold, etc.)");
-        } else { // Business
-            addMessage('ai', "Excellent! Let me gather some details to help our business solution agents. What's the primary goal of this project?");
-        }
-
-        // Add action buttons
-        const lastMessage = chatMessages.lastElementChild;
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'message-actions';
-
-        if (categoryId === 1) { // Development
-            actionsDiv.innerHTML = `
-                <button class="message-action-btn">Web</button>
-                <button class="message-action-btn">Mobile</button>
-                <button class="message-action-btn">Desktop</button>
-                <button class="message-action-btn">All Platforms</button>
-            `;
-        } else if (categoryId === 2) { // Content
-            actionsDiv.innerHTML = `
-                <button class="message-action-btn">General Audience</button>
-                <button class="message-action-btn">Professionals</button>
-                <button class="message-action-btn">Technical</button>
-                <button class="message-action-btn">Creative</button>
-            `;
-        } else if (categoryId === 3) { // Creative
-            actionsDiv.innerHTML = `
-                <button class="message-action-btn">Modern</button>
-                <button class="message-action-btn">Minimalist</button>
-                <button class="message-action-btn">Bold</button>
-                <button class="message-action-btn">Elegant</button>
-            `;
-        } else { // Business
-            actionsDiv.innerHTML = `
-                <button class="message-action-btn">Increase Sales</button>
-                <button class="message-action-btn">Brand Awareness</button>
-                <button class="message-action-btn">Customer Retention</button>
-                <button class="message-action-btn">Lead Generation</button>
-            `;
-        }
-
-        lastMessage.querySelector('.message-content').appendChild(actionsDiv);
-
-        // Add event listeners to buttons
-        actionsDiv.querySelectorAll('.message-action-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                // Send user message with selection
-                addMessage('user', btn.textContent);
-
-                // Show typing indicator
-                const typingIndicator = addTypingIndicator();
-
-                // Send second requirement question
-                setTimeout(() => {
-                    chatMessages.removeChild(typingIndicator);
-
-                    if (categoryId === 1) { // Development
-                        addMessage('ai', "Thanks! And what features are most important for your project?");
-                        addSecondRequirementOptions(categoryId, "User Experience", "Performance", "Security", "Scalability");
-                    } else if (categoryId === 2) { // Content
-                        addMessage('ai', "Got it! And what's the primary purpose of this content?");
-                        addSecondRequirementOptions(categoryId, "Informative", "Persuasive", "Educational", "Entertaining");
-                    } else if (categoryId === 3) { // Creative
-                        addMessage('ai', "Perfect! And what colors would you prefer?");
-                        addColorOptions();
-                    } else { // Business
-                        addMessage('ai', "Understood! What's your timeline for this project?");
-                        addSecondRequirementOptions(categoryId, "ASAP", "Within a week", "2-4 weeks", "Flexible");
-                    }
-                }, 1000);
+        try {
+            // Get copy from the API
+            const response = await CopyAPI.generateResponse(requestText, 'match', {
+                category_id: categoryId
             });
-        });
+            
+            // Display the main message
+            addMessage('ai', response.text);
+            
+            // Display the follow-up question
+            addMessage('ai', response.followup);
+            
+            // Add action buttons
+            const lastMessage = chatMessages.lastElementChild;
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+
+            if (categoryId === 1) { // Development
+                actionsDiv.innerHTML = `
+                    <button class="message-action-btn">Web</button>
+                    <button class="message-action-btn">Mobile</button>
+                    <button class="message-action-btn">Desktop</button>
+                    <button class="message-action-btn">All Platforms</button>
+                `;
+            } else if (categoryId === 2) { // Content
+                actionsDiv.innerHTML = `
+                    <button class="message-action-btn">General Audience</button>
+                    <button class="message-action-btn">Professionals</button>
+                    <button class="message-action-btn">Technical</button>
+                    <button class="message-action-btn">Creative</button>
+                `;
+            } else if (categoryId === 3) { // Creative
+                actionsDiv.innerHTML = `
+                    <button class="message-action-btn">Modern</button>
+                    <button class="message-action-btn">Minimalist</button>
+                    <button class="message-action-btn">Bold</button>
+                    <button class="message-action-btn">Elegant</button>
+                `;
+            } else { // Business
+                actionsDiv.innerHTML = `
+                    <button class="message-action-btn">Increase Sales</button>
+                    <button class="message-action-btn">Brand Awareness</button>
+                    <button class="message-action-btn">Customer Retention</button>
+                    <button class="message-action-btn">Lead Generation</button>
+                `;
+            }
+
+            lastMessage.querySelector('.message-content').appendChild(actionsDiv);
+
+            // Add event listeners to buttons
+            actionsDiv.querySelectorAll('.message-action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Send user message with selection
+                    addMessage('user', btn.textContent);
+
+                    // Show typing indicator
+                    const typingIndicator = addTypingIndicator();
+
+                    // Send second requirement question
+                    setTimeout(() => {
+                        chatMessages.removeChild(typingIndicator);
+
+                        if (categoryId === 1) { // Development
+                            addMessage('ai', "Thanks! And what features are most important for your project?");
+                            addSecondRequirementOptions(categoryId, "User Experience", "Performance", "Security", "Scalability");
+                        } else if (categoryId === 2) { // Content
+                            addMessage('ai', "Got it! And what's the primary purpose of this content?");
+                            addSecondRequirementOptions(categoryId, "Informative", "Persuasive", "Educational", "Entertaining");
+                        } else if (categoryId === 3) { // Creative
+                            addMessage('ai', "Perfect! And what colors would you prefer?");
+                            addColorOptions();
+                        } else { // Business
+                            addMessage('ai', "Understood! What's your timeline for this project?");
+                            addSecondRequirementOptions(categoryId, "ASAP", "Within a week", "2-4 weeks", "Flexible");
+                        }
+                    }, 1000);
+                });
+            });
+        } catch (error) {
+            console.error('Error getting match response:', error);
+            
+            // Fallback to hardcoded response
+            addMessage('ai', `I've found a perfect match for your request in our ${getCategoryName(categoryId)} category!`);
+            
+            if (categoryId === 1) { // Development
+                addMessage('ai', "Let me gather some details to help our AI agents create exactly what you need. What platform(s) will this be used on? (Web, Mobile, Desktop)");
+            } else if (categoryId === 2) { // Content
+                addMessage('ai', "Great! Let me gather some details for our AI content specialists. What's the target audience for this content?");
+            } else if (categoryId === 3) { // Creative
+                addMessage('ai', "Perfect! To help our AI creative agents get started, could you describe the style you're looking for? (Modern, Minimalist, Bold, etc.)");
+            } else { // Business
+                addMessage('ai', "Excellent! Let me gather some details to help our business solution agents. What's the primary goal of this project?");
+            }
+        }
     }
 }
 
