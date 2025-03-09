@@ -1,0 +1,7 @@
+[
+    { "id": 1, "name": "Development", "color": "primary-glow" },
+    { "id": 2, "name": "Content", "color": "warning-color" },
+    { "id": 3, "name": "Creative", "color": "new-color" },
+    { "id": 4, "name": "Business", "color": "accent-blue" },
+    { "id": 5, "name": "Finance", "color": "primary-glow" }
+]

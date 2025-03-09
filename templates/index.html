@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cyberpunk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS | Request Interpreter</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/widgets.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+</head>
+<body>
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+
+    <!-- Theme Toggle -->
+    <div class="theme-toggle" id="themeToggle">
+        <div class="theme-tooltip">Switch to Google/Cyberpunk Theme</div>
+        <div class="toggle-track">
+            <div class="toggle-thumb"></div>
+            <div class="toggle-icon toggle-icon-cyber">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <div class="toggle-icon toggle-icon-google">
+                <i class="fab fa-google"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="nexus-container">
+        <div class="brand">
+            <h1>
+                <span style="--index:1" class="glitch-animation">N</span>
+                <span style="--index:2" class="glitch-animation">E</span>
+                <span style="--index:3" class="glitch-animation">X</span>
+                <span style="--index:4" class="glitch-animation">U</span>
+                <span style="--index:5" class="glitch-animation">S</span>
+            </h1>
+            <p>Tell us what you need, and we'll find the perfect solution through our network of AI agents and expert freelancers.</p>
+        </div>
+
+        <!-- Input area at top (always visible) -->
+        <div class="request-container" id="requestContainer">
+            <textarea id="requestBox" class="request-box" placeholder="Describe what you need created..."></textarea>
+            <div class="glow-effect" id="glowEffect"></div>
+            <button id="submitBtn" class="submit-btn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+
+        <!-- Chat frame that appears after submission -->
+        <div id="chatFrame" class="chat-frame">
+            <div class="chat-header">
+                <div class="chat-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="chat-title">NEXUS Assistant</div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages will be inserted here via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/widgets.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/neural-network.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+/* Animations */
+@keyframes float {
+    0% { transform: translateY(0) translateX(0); }
+    50% { transform: translateY(-20px) translateX(15px); }
+    100% { transform: translateY(0) translateX(0); }
+}
+
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeUp {
+    from { 
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseRing {
+    0% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.5); opacity: 0.3; }
+    100% { transform: scale(1); opacity: 0.7; }
+}
+
+@keyframes callRings {
+    0% {
+        transform: scale(0.8);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+@keyframes typingAnimation {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes neuralBlink {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes neuralShift {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 100%; }
+}
+
+/* Special animations for cyberpunk theme */
+[data-theme="cyberpunk"] .node.highlight,
+[data-theme="cyberpunk"] .path.active {
+    animation: cyberpunkPulse 2s infinite;
+}
+
+@keyframes cyberpunkPulse {
+    0% { box-shadow: 0 0 5px currentColor; }
+    50% { box-shadow: 0 0 20px currentColor; }
+    100% { box-shadow: 0 0 5px currentColor; }
+}
+
+/* Custom cyberpunk theme styling */
+[data-theme="cyberpunk"] .neural-widget::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, 
+                    rgba(0, 255, 157, 0.15) 0%, 
+                    transparent 70%);
+    opacity: 0.5;
+    animation: neuralBlink 8s infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+[data-theme="cyberpunk"] .neural-widget::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, 
+                rgba(0, 255, 157, 0.1) 0%, 
+                transparent 20%,
+                transparent 80%,
+                rgba(255, 0, 195, 0.1) 100%);
+    opacity: 0.3;
+    animation: neuralShift 10s infinite alternate;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Add a subtle grid pattern to neural network */
+[data-theme="cyberpunk"] .neural-network::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        linear-gradient(rgba(0, 255, 157, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 157, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.2;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Cyberpunk node label styling */
+[data-theme="cyberpunk"] .node.category-1 + .node-label {
+    color: var(--primary-glow);
+    text-shadow: 0 0 5px rgba(var(--primary-glow-rgb), 0.5);
+}
+
+[data-theme="cyberpunk"] .node.category-2 + .node-label {
+  color: var(--warning-color);
+    text-shadow: 0 0 5px rgba(var(--warning-color-rgb), 0.5);
+}
+
+[data-theme="cyberpunk"] .node.category-3 + .node-label {
+    color: var(--new-color);
+    text-shadow: 0 0 5px rgba(var(--new-color-rgb), 0.5);
+}
+
+[data-theme="cyberpunk"] .node.category-4 + .node-label {
+    color: var(--accent-blue);
+    text-shadow: 0 0 5px rgba(var(--accent-blue-rgb), 0.5);
+}
+
+[data-theme="cyberpunk"] .node.category-5 + .node-label {
+    color: var(--primary-glow);
+    text-shadow: 0 0 5px rgba(var(--primary-glow-rgb), 0.5);
+}
+
+/* Cyberpunk neural status */
+[data-theme="cyberpunk"] .neural-status {
+    box-shadow: 0 0 10px rgba(var(--primary-glow-rgb), 0.2);
+    text-shadow: 0 0 5px var(--primary-glow);
+}
+
+/* Cyberpunk discovery badge */
+[data-theme="cyberpunk"] .discovery-badge {
+    background: linear-gradient(135deg, rgba(255, 0, 195, 0.8) 0%, rgba(255, 0, 195, 0.5) 100%);
+    box-shadow: 0 5px 15px rgba(255, 0, 195, 0.2);
+}
+
+[data-theme="cyberpunk"] .discovery-badge i {
+    text-shadow: 0 0 5px #fff;
+}
+
+/* Cyberpunk freelancer card hover effects */
+[data-theme="cyberpunk"] .freelancer-card:hover {
+    background-color: rgba(24, 35, 56, 0.6);
+    border-color: rgba(var(--primary-glow-rgb), 0.3);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="cyberpunk"] .freelancer-card:hover .freelancer-avatar::after {
+    opacity: 0.7;
+    animation: pulse 2s infinite;
+}
+
+[data-theme="cyberpunk"] .online-badge {
+    box-shadow: 0 0 8px var(--success-color);
+}
+
+[data-theme="cyberpunk"] .freelancer-card:hover .skill-tag {
+    background-color: rgba(var(--primary-glow-rgb), 0.2);
+    box-shadow: 0 0 8px rgba(var(--primary-glow-rgb), 0.2);
+}
+
+[data-theme="cyberpunk"] .rating-stars {
+    text-shadow: 0 0 3px var(--warning-color);
+}
+
+/* Cyberpunk message widget hover */
+[data-theme="cyberpunk"] .message-widget {
+    background-color: rgba(12, 18, 30, 0.7);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(0, 255, 157, 0.1);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="cyberpunk"] .message-widget:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35), 0 0 10px rgba(var(--primary-glow-rgb), 0.1);
+}
+
+[data-theme="cyberpunk"] .widget-icon {
+    box-shadow: 0 0 8px var(--primary-glow);
+}
+
+/* Cyberpunk agent badge */
+[data-theme="cyberpunk"] .agent-badge {
+    box-shadow: 0 0 8px rgba(var(--accent-blue-rgb), 0.2);
+    text-shadow: 0 0 5px var(--accent-blue);
+}

@@ -1,0 +1,74 @@
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .brand h1 {
+        font-size: 2.5rem;
+    }
+    
+    .delivery-options, 
+    .freelancers-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .theme-toggle {
+        top: 10px;
+        right: 10px;
+    }
+    
+    .nexus-container {
+        width: 95%;
+        padding: 1rem;
+    }
+    
+    .chat-messages {
+        padding: 1rem;
+    }
+    
+    .message {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .brand h1 {
+        font-size: 2rem;
+    }
+    
+    .brand p {
+        font-size: 0.9rem;
+    }
+    
+    .neural-legend {
+        flex-wrap: wrap;
+        font-size: 0.6rem;
+    }
+    
+    .chat-header {
+        padding: 0.8rem;
+    }
+    
+    .chat-icon {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .message-avatar {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .message-content {
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .message-text {
+        font-size: 0.9rem;
+    }
+    
+    .widget-header {
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .widget-content {
+        padding: 0.8rem;
+    }
+}

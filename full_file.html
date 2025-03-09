@@ -1,0 +1,3705 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cyberpunk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS | Request Interpreter</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-glow: #00ff9d;
+            --primary-glow-rgb: 0, 255, 157;
+            --primary-dark: #00302e;
+            --bg-dark: #0a0e17;
+            --bg-dark-rgb: 10, 14, 23;
+            --bg-darker: #070a10;
+            --text-light: #e0e0e0;
+            --text-light-rgb: 224, 224, 224;
+            --card-bg: #121a29;
+            --card-bg-hover: #182338;
+            --success-color: #00ff9d;
+            --success-color-rgb: 0, 255, 157;
+            --warning-color: #ffae00;
+            --warning-color-rgb: 255, 174, 0;
+            --new-color: #ff00c3;
+            --new-color-rgb: 255, 0, 195;
+            --accent-blue: #0099ff;
+            --accent-blue-rgb: 0, 153, 255;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --card-border: rgba(255, 255, 255, 0.05);
+            --transition-speed: 0.3s;
+        }
+
+        /* Google Theme Variables */
+        [data-theme="google"] {
+            --primary-glow: #4285F4;
+            --primary-glow-rgb: 66, 133, 244;
+            --primary-dark: #3367D6;
+            --bg-dark: #ffffff;
+            --bg-dark-rgb: 255, 255, 255;
+            --bg-darker: #f8f9fa;
+            --text-light: #202124;
+            --text-light-rgb: 32, 33, 36;
+            --card-bg: #ffffff;
+            --card-bg-hover: #f8f9fa;
+            --success-color: #34A853;
+            --success-color-rgb: 52, 168, 83;
+            --warning-color: #FBBC05;
+            --warning-color-rgb: 251, 188, 5;
+            --new-color: #EA4335;
+            --new-color-rgb: 234, 67, 53;
+            --accent-blue: #4285F4;
+            --accent-blue-rgb: 66, 133, 244;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --card-border: rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color var(--transition-speed) ease, 
+                        color var(--transition-speed) ease,
+                        border-color var(--transition-speed) ease,
+                        box-shadow var(--transition-speed) ease;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            padding-bottom: 100px;
+        }
+
+        [data-theme="cyberpunk"] body {
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 255, 157, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 0, 195, 0.03) 0%, transparent 40%);
+        }
+
+        [data-theme="google"] body {
+            background-image: none;
+        }
+
+        /* Background grid effect - only for cyberpunk */
+        [data-theme="cyberpunk"] body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(11, 17, 28, 0.8) 1px, transparent 1px),
+                             linear-gradient(90deg, rgba(11, 17, 28, 0.8) 1px, transparent 1px);
+            background-size: 20px 20px;
+            z-index: -1;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* Glowing orbs in background - only for cyberpunk */
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.1;
+            z-index: -1;
+            transition: opacity var(--transition-speed) ease;
+        }
+
+        [data-theme="google"] .bg-orb {
+            opacity: 0;
+        }
+
+        .bg-orb-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--primary-glow);
+            top: 10%;
+            left: 15%;
+            animation: float 15s ease-in-out infinite;
+        }
+
+        .bg-orb-2 {
+            width: 250px;
+            height: 250px;
+            background: var(--new-color);
+            bottom: 15%;
+            right: 10%;
+            animation: float 18s ease-in-out infinite alternate;
+        }
+
+        .bg-orb-3 {
+            width: 200px;
+            height: 200px;
+            background: var(--accent-blue);
+            top: 60%;
+            left: 25%;
+            animation: float 12s ease-in-out infinite alternate;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(-20px) translateX(15px); }
+            100% { transform: translateY(0) translateX(0); }
+        }
+
+        .nexus-container {
+            width: 90%;
+            max-width: 1200px; /* Increased from 900px for wider layout */
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Theme Toggle Switch */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .toggle-track {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 2px 10px var(--shadow-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5px;
+            overflow: hidden;
+        }
+
+        [data-theme="cyberpunk"] .toggle-track {
+            box-shadow: 0 0 15px rgba(0, 255, 157, 0.2);
+        }
+
+        .toggle-thumb {
+            position: absolute;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background-color: var(--primary-glow);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            z-index: 2;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        [data-theme="google"] .toggle-thumb {
+            left: 33px;
+        }
+
+        .toggle-icon {
+            color: var(--text-light);
+            font-size: 14px;
+            z-index: 1;
+        }
+
+        [data-theme="cyberpunk"] .toggle-icon-cyber {
+            color: var(--text-light);
+        }
+
+        [data-theme="cyberpunk"] .toggle-icon-google {
+            color: rgba(224, 224, 224, 0.5);
+        }
+
+        [data-theme="google"] .toggle-icon-cyber {
+            color: rgba(32, 33, 36, 0.5);
+        }
+
+        [data-theme="google"] .toggle-icon-google {
+            color: var(--text-light);
+        }
+
+        /* Tooltip for theme toggle */
+        .theme-tooltip {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--card-bg);
+            color: var(--text-light);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            border: 1px solid var(--card-border);
+        }
+
+        .theme-toggle:hover .theme-tooltip {
+            opacity: 1;
+        }
+
+        /* Brand styling */
+        .brand {
+            margin-bottom: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .brand h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            position: relative;
+            display: inline-block;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+            transition: text-shadow 0.3s ease;
+        }
+
+        [data-theme="cyberpunk"] .brand h1 {
+            text-shadow: 0 0 10px rgba(0, 255, 157, 0.4);
+        }
+
+        [data-theme="google"] .brand h1 {
+            font-family: 'Roboto', sans-serif;
+            letter-spacing: 0;
+            font-weight: 400;
+            text-shadow: none;
+        }
+
+        /* Individual letter effects for NEXUS */
+        .brand h1 span {
+            display: inline-block;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="cyberpunk"] .brand h1 span::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            bottom: -5px;
+            left: 0;
+            background: var(--primary-glow);
+            box-shadow: 0 0 10px var(--primary-glow);
+            transform: scaleX(0);
+            transform-origin: bottom right;
+            transition: transform 0.3s ease;
+        }
+
+        [data-theme="cyberpunk"] .brand h1:hover span::after {
+            transform: scaleX(1);
+            transform-origin: bottom left;
+            transition-delay: calc(0.05s * var(--index));
+        }
+
+        [data-theme="cyberpunk"] .brand h1 span:nth-child(2n) {
+            color: var(--primary-glow);
+        }
+
+        [data-theme="cyberpunk"] .brand h1::before {
+            content: '';
+            position: absolute;
+            width: 120%;
+            height: 100%;
+            top: 0;
+            left: -10%;
+            background: radial-gradient(ellipse at center, rgba(0, 255, 157, 0.1) 0%, rgba(0, 255, 157, 0) 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .brand p {
+            margin-top: 1rem;
+            font-weight: 300;
+            opacity: 0.8;
+            max-width: 700px; /* Increased from 600px */
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        [data-theme="google"] .brand p {
+            opacity: 0.6;
+        }
+
+        /* Matrix-like rain animation - cyberpunk only */
+        .matrix-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.05;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) ease;
+        }
+
+        [data-theme="google"] .matrix-rain {
+            opacity: 0;
+        }
+
+        /* Request container styling */
+        .request-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .request-box {
+            width: 100%;
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 1.2rem;
+            color: var(--text-light);
+            font-size: 1rem;
+            min-height: 60px;
+            resize: none;
+            outline: none;
+            box-shadow: 0 10px 30px var(--shadow-color);
+            transition: all 0.4s ease, box-shadow 0.4s ease;
+            font-family: inherit;
+            line-height: 1.6;
+        }
+
+        [data-theme="cyberpunk"] .request-box {
+            background-color: rgba(12, 18, 30, 0.7);
+            border: 1px solid rgba(0, 255, 157, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 
+                        0 0 0 1px rgba(0, 255, 157, 0.1),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .request-box:focus {
+            border-color: var(--primary-glow);
+            box-shadow: 0 15px 40px var(--shadow-color);
+        }
+
+        [data-theme="cyberpunk"] .request-box:focus {
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 
+                        0 0 20px rgba(0, 255, 157, 0.2),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            background-color: rgba(14, 22, 36, 0.8);
+        }
+
+        .request-box::placeholder {
+            color: rgba(var(--text-light-rgb), 0.4);
+        }
+
+        .glow-effect {
+            position: absolute;
+            top: -15px;
+            left: -15px;
+            right: -15px;
+            bottom: -15px;
+            border-radius: 25px;
+            z-index: -1;
+            opacity: 0;
+            background: radial-gradient(
+                circle at center,
+                rgba(var(--primary-glow-rgb), 0.15) 0%,
+                rgba(var(--primary-glow-rgb), 0) 70%
+            );
+            box-shadow: 0 0 30px rgba(var(--primary-glow-rgb), 0.1);
+            transition: opacity 0.5s ease;
+        }
+
+        [data-theme="cyberpunk"] .active .glow-effect {
+            opacity: 1;
+        }
+
+        .submit-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: var(--primary-glow);
+            color: var(--bg-dark);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            z-index: 2;
+        }
+
+        [data-theme="cyberpunk"] .submit-btn {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, rgba(0, 85, 70, 0.9) 100%);
+            color: var(--primary-glow);
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.25),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .submit-btn i {
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="cyberpunk"] .submit-btn i {
+            text-shadow: 0 0 5px var(--primary-glow);
+        }
+
+        .submit-btn:hover {
+            transform: scale(1.05);
+        }
+
+        [data-theme="cyberpunk"] .submit-btn:hover {
+            background: linear-gradient(135deg, var(--primary-glow) 0%, rgba(0, 200, 170, 0.9) 100%);
+            box-shadow: 0 0 30px rgba(0, 255, 157, 0.4);
+        }
+
+        [data-theme="cyberpunk"] .submit-btn:hover i {
+            color: var(--bg-dark);
+            text-shadow: none;
+        }
+
+        .submit-btn.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Chat frame - appears below input */
+        .chat-frame {
+            width: 100%;
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            margin-top: 1rem;
+            box-shadow: 0 10px 30px var(--shadow-color);
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .chat-frame.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        [data-theme="cyberpunk"] .chat-frame {
+            background-color: rgba(12, 18, 30, 0.7);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(0, 255, 157, 0.1);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            background-color: rgba(var(--bg-dark-rgb), 0.5);
+        }
+
+        .chat-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--primary-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.8rem;
+            color: var(--bg-dark);
+        }
+
+        [data-theme="google"] .chat-icon {
+            background-color: var(--primary-glow);
+            color: white;
+        }
+
+        [data-theme="cyberpunk"] .chat-icon {
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .chat-title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .chat-messages {
+            padding: 1.5rem;
+            max-height: 800px; /* Increased from 600px */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* Increased from 1rem */
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 1rem;
+            animation: fadeIn 0.3s ease forwards;
+            max-width: 85%; /* Increased from no limit */
+        }
+
+        .message-user {
+            justify-content: flex-end;
+            margin-left: auto;
+        }
+
+        .message-ai {
+            justify-content: flex-start;
+            margin-right: auto;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            margin-right: 0.8rem;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+        }
+
+        .message-ai .message-avatar {
+            background-color: var(--primary-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bg-dark);
+            font-size: 1rem;
+        }
+
+        [data-theme="cyberpunk"] .message-ai .message-avatar {
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        [data-theme="google"] .message-ai .message-avatar {
+            background-color: var(--primary-glow);
+            color: white;
+        }
+
+        .message-user .message-avatar {
+            margin-right: 0;
+            margin-left: 0.8rem;
+            background-color: var(--card-bg-hover);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message-content {
+            max-width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 18px;
+            color: var(--text-light);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .message-ai .message-content {
+            background-color: var(--card-bg);
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+
+        [data-theme="cyberpunk"] .message-ai .message-content {
+            background-color: rgba(18, 26, 41, 0.8);
+            border: 1px solid rgba(var(--primary-glow-rgb), 0.1);
+        }
+
+        .message-user .message-content {
+            background-color: var(--primary-glow);
+            color: var(--bg-dark);
+            border-bottom-right-radius: 5px;
+        }
+
+        [data-theme="cyberpunk"] .message-user .message-content {
+            background: linear-gradient(135deg, var(--primary-glow) 0%, rgba(0, 200, 170, 0.9) 100%);
+            box-shadow: 0 0 15px rgba(0, 255, 157, 0.2);
+        }
+
+        .message-text {
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            margin-top: 0.3rem;
+            opacity: 0.6;
+            text-align: right;
+        }
+
+        /* Unified style for cyberpunk themed elements */
+        [data-theme="cyberpunk"] .submit-btn,
+        [data-theme="cyberpunk"] .message-action-btn.primary,
+        [data-theme="cyberpunk"] .generate-btn,
+        [data-theme="cyberpunk"] .delivery-option.selected,
+        [data-theme="cyberpunk"] .message-ai .message-content,
+        [data-theme="cyberpunk"] .message-user .message-content,
+        [data-theme="cyberpunk"] .neural-status,
+        [data-theme="cyberpunk"] .neural-legend,
+        [data-theme="cyberpunk"] .freelancer-card,
+        [data-theme="cyberpunk"] .solution-step.active .step-marker,
+        [data-theme="cyberpunk"] .solution-step.complete .step-marker {
+            box-shadow: 0 0 15px rgba(0, 255, 157, 0.25),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="cyberpunk"] .submit-btn:hover,
+        [data-theme="cyberpunk"] .message-action-btn.primary:hover,
+        [data-theme="cyberpunk"] .generate-btn:hover {
+            box-shadow: 0 0 30px rgba(0, 255, 157, 0.4),
+                        inset 0 1px 3px rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        /* Widget styling */
+        .message-widget {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 5px 15px var(--shadow-color);
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="cyberpunk"] .message-widget {
+            background-color: rgba(12, 18, 30, 0.7);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(0, 255, 157, 0.1);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .message-widget:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--shadow-color);
+        }
+
+        [data-theme="cyberpunk"] .message-widget:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35), 0 0 10px rgba(var(--primary-glow-rgb), 0.1);
+        }
+
+        .widget-header {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            background-color: rgba(var(--bg-dark-rgb), 0.3);
+        }
+
+        .widget-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: var(--primary-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.5rem;
+            color: var(--bg-dark);
+            font-size: 0.7rem;
+        }
+
+        [data-theme="cyberpunk"] .widget-icon {
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .widget-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            flex-grow: 1;
+        }
+
+        .widget-close {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .widget-close:hover {
+            opacity: 1;
+            background-color: rgba(var(--text-light-rgb), 0.1);
+        }
+
+        .widget-content {
+            padding: 1rem;
+        }
+
+        /* Neural network widget - Improved with labels */
+        .neural-widget {
+            height: 300px; /* Increased height to prevent cutting off */
+            position: relative;
+            overflow: hidden;
+            padding: 0.5rem;
+        }
+
+        /* Add blinking background to neural network */
+        [data-theme="cyberpunk"] .neural-widget::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, 
+                            rgba(0, 255, 157, 0.15) 0%, 
+                            transparent 70%);
+            opacity: 0.5;
+            animation: neuralBlink 8s infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        [data-theme="cyberpunk"] .neural-widget::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                        rgba(0, 255, 157, 0.1) 0%, 
+                        transparent 20%,
+                        transparent 80%,
+                        rgba(255, 0, 195, 0.1) 100%);
+            opacity: 0.3;
+            animation: neuralShift 10s infinite alternate;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes neuralBlink {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes neuralShift {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        /* Add a subtle grid pattern to neural network */
+        [data-theme="cyberpunk"] .neural-network::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(0, 255, 157, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 157, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.2;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .neural-network {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            overflow: visible;
+        }
+
+        .node {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: rgba(var(--text-light-rgb), 0.3);
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(var(--text-light-rgb), 0.1);
+            transition: all 0.4s ease;
+            z-index: 2;
+        }
+
+        .node::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            z-index: 1;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .node.root {
+            width: 12px;
+            height: 12px;
+            background-color: var(--primary-glow);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .node.root::after {
+            border: 1px solid rgba(var(--primary-glow-rgb), 0.3);
+            animation: pulseRing 3s infinite;
+            opacity: 1;
+        }
+
+        .node.category-1 {
+            background-color: var(--primary-glow);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .node.category-2 {
+            background-color: var(--warning-color);
+            box-shadow: 0 0 8px var(--warning-color);
+        }
+
+        .node.category-3 {
+            background-color: var(--new-color);
+            box-shadow: 0 0 8px var(--new-color);
+        }
+
+        .node.category-4 {
+            background-color: var(--accent-blue);
+            box-shadow: 0 0 8px var(--accent-blue);
+        }
+
+        .node.category-5 {
+            background-color: var(--primary-glow);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .node.highlight {
+            transform: scale(1.8);
+            z-index: 3;
+        }
+
+        .node.highlight::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            border: 1px solid currentColor;
+            opacity: 0.7;
+            animation: pulseRing 2s infinite;
+        }
+
+        [data-theme="cyberpunk"] .node.highlight,
+        [data-theme="cyberpunk"] .path.active {
+            animation: cyberpunkPulse 2s infinite;
+        }
+
+        @keyframes cyberpunkPulse {
+            0% { box-shadow: 0 0 5px currentColor; }
+            50% { box-shadow: 0 0 20px currentColor; }
+            100% { box-shadow: 0 0 5px currentColor; }
+        }
+
+        /* Node label styling */
+        .node-label {
+            position: absolute;
+            font-size: 0.65rem;
+            color: var(--text-light);
+            opacity: 0.8;
+            pointer-events: none;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .node.highlight + .node-label {
+            opacity: 1;
+            font-weight: 600;
+        }
+
+        [data-theme="cyberpunk"] .node.category-1 + .node-label {
+            color: var(--primary-glow);
+            text-shadow: 0 0 5px rgba(var(--primary-glow-rgb), 0.5);
+        }
+
+        [data-theme="cyberpunk"] .node.category-2 + .node-label {
+          color: var(--warning-color);
+            text-shadow: 0 0 5px rgba(var(--warning-color-rgb), 0.5);
+        }
+
+        [data-theme="cyberpunk"] .node.category-3 + .node-label {
+            color: var(--new-color);
+            text-shadow: 0 0 5px rgba(var(--new-color-rgb), 0.5);
+        }
+
+        [data-theme="cyberpunk"] .node.category-4 + .node-label {
+            color: var(--accent-blue);
+            text-shadow: 0 0 5px rgba(var(--accent-blue-rgb), 0.5);
+        }
+
+        [data-theme="cyberpunk"] .node.category-5 + .node-label {
+            color: var(--primary-glow);
+            text-shadow: 0 0 5px rgba(var(--primary-glow-rgb), 0.5);
+        }
+
+        @keyframes pulseRing {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.5); opacity: 0.3; }
+            100% { transform: scale(1); opacity: 0.7; }
+        }
+
+        .path {
+            position: absolute;
+            height: 2px;
+            background-color: rgba(var(--text-light-rgb), 0.1);
+            transform-origin: 0% 0%;
+            transition: all 0.5s ease;
+            z-index: 1;
+        }
+
+        .path.category-1 {
+            background-color: rgba(var(--primary-glow-rgb), 0.2);
+        }
+
+        .path.category-2 {
+            background-color: rgba(var(--warning-color-rgb), 0.2);
+        }
+
+        .path.category-3 {
+            background-color: rgba(var(--new-color-rgb), 0.2);
+        }
+
+        .path.category-4 {
+            background-color: rgba(var(--accent-blue-rgb), 0.2);
+        }
+
+        .path.category-5 {
+            background-color: rgba(var(--primary-glow-rgb), 0.2);
+        }
+
+        .path.active {
+            opacity: 0.8;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .path.category-1.active {
+            background-color: rgba(var(--primary-glow-rgb), 0.6);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .path.category-2.active {
+            background-color: rgba(var(--warning-color-rgb), 0.6);
+            box-shadow: 0 0 8px var(--warning-color);
+        }
+
+        .path.category-3.active {
+            background-color: rgba(var(--new-color-rgb), 0.6);
+            box-shadow: 0 0 8px var(--new-color);
+        }
+
+        .path.category-4.active {
+            background-color: rgba(var(--accent-blue-rgb), 0.6);
+            box-shadow: 0 0 8px var(--accent-blue);
+        }
+
+        .path.category-5.active {
+            background-color: rgba(var(--primary-glow-rgb), 0.6);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .neural-status {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            color: var(--primary-glow);
+            display: flex;
+            align-items: center;
+            background-color: rgba(var(--bg-dark-rgb, 7, 10, 16), 0.7);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            z-index: 5;
+        }
+
+        [data-theme="cyberpunk"] .neural-status {
+            box-shadow: 0 0 10px rgba(var(--primary-glow-rgb), 0.2);
+            text-shadow: 0 0 5px var(--primary-glow);
+        }
+
+        .neural-status i {
+            margin-right: 0.5rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Category legend for neural network */
+        .neural-legend {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+            background-color: rgba(var(--bg-dark-rgb, 7, 10, 16), 0.7);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            z-index: 5;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .legend-color {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+
+        .legend-color.c1 {
+            background-color: var(--primary-glow);
+            box-shadow: 0 0 5px var(--primary-glow);
+        }
+
+        .legend-color.c2 {
+            background-color: var(--warning-color);
+            box-shadow: 0 0 5px var(--warning-color);
+        }
+
+        .legend-color.c3 {
+            background-color: var(--new-color);
+            box-shadow: 0 0 5px var(--new-color);
+        }
+
+        .legend-color.c4 {
+            background-color: var(--accent-blue);
+            box-shadow: 0 0 5px var(--accent-blue);
+        }
+
+        /* Solution progress widget */
+        .solution-widget {
+            min-height: 150px;
+        }
+
+        .solution-steps {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .solution-steps::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: rgba(var(--text-light-rgb), 0.1);
+        }
+
+        .solution-step {
+            position: relative;
+            padding-bottom: 1.5rem;
+            opacity: 0.4;
+            transition: opacity 0.3s ease;
+        }
+
+        .solution-step.active {
+            opacity: 1;
+        }
+
+        .solution-step:last-child {
+            padding-bottom: 0;
+        }
+
+        .step-marker {
+            position: absolute;
+            left: -30px;
+            top: 0;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: var(--card-bg);
+            border: 2px solid rgba(var(--text-light-rgb), 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .solution-step.active .step-marker {
+            background-color: var(--primary-glow);
+            border-color: var(--primary-glow);
+        }
+
+        [data-theme="cyberpunk"] .solution-step.active .step-marker {
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .solution-step.complete .step-marker {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        [data-theme="cyberpunk"] .solution-step.complete .step-marker {
+            box-shadow: 0 0 10px var(--success-color);
+        }
+
+        .step-marker i {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.6rem;
+            color: var(--bg-dark);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .solution-step.complete .step-marker i {
+            opacity: 1;
+        }
+
+        .step-content {
+            padding-top: 1px;
+        }
+
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        .step-description {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+
+        /* Generate button for after gathering requirements */
+        .generate-btn {
+            margin-top: 1rem;
+            padding: 0.8rem 1.5rem;
+            background-color: var(--primary-glow);
+            color: var(--bg-dark);
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            width: 100%;
+        }
+
+        [data-theme="cyberpunk"] .generate-btn {
+            background: linear-gradient(135deg, var(--primary-glow) 0%, rgba(0, 200, 170, 0.9) 100%);
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .generate-btn i {
+            margin-right: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(var(--primary-glow-rgb), 0.4);
+        }
+
+        /* Agent delivery options widget */
+        .delivery-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .delivery-option {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        [data-theme="cyberpunk"] .delivery-option {
+            background-color: rgba(18, 26, 41, 0.4);
+            border: 1px solid rgba(var(--primary-glow-rgb), 0.1);
+        }
+
+        .delivery-option:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px var(--shadow-color);
+        }
+
+        [data-theme="cyberpunk"] .delivery-option:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35), 0 0 10px rgba(var(--primary-glow-rgb), 0.2);
+            border-color: rgba(var(--primary-glow-rgb), 0.3);
+        }
+
+        .delivery-option.selected {
+            border-color: var(--primary-glow);
+        }
+
+        [data-theme="cyberpunk"] .delivery-option.selected {
+            box-shadow: 0 0 15px rgba(var(--primary-glow-rgb), 0.3);
+        }
+
+        .delivery-option-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .delivery-option-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(var(--primary-glow-rgb), 0.1);
+            color: var(--primary-glow);
+            margin-right: 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        [data-theme="cyberpunk"] .delivery-option-icon {
+            text-shadow: 0 0 5px var(--primary-glow);
+        }
+
+        .delivery-option-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Agent badge - Fixed positioning */
+        .agent-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            background-color: rgba(var(--accent-blue-rgb), 0.2);
+            color: var(--accent-blue);
+            border-radius: 4px;
+            padding: 0.15rem 0.4rem;
+            font-weight: 500;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            white-space: nowrap;
+        }
+
+        [data-theme="cyberpunk"] .agent-badge {
+            box-shadow: 0 0 8px rgba(var(--accent-blue-rgb), 0.2);
+            text-shadow: 0 0 5px var(--accent-blue);
+        }
+
+        .delivery-option-description {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            line-height: 1.5;
+            margin-bottom: 0.8rem;
+            min-height: 2.4rem;
+        }
+
+        .delivery-option-preview {
+            background-color: rgba(var(--bg-dark-rgb, 7, 10, 16), 0.2);
+            border-radius: 6px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: var(--primary-glow);
+            opacity: 0.7;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .delivery-option:hover .delivery-option-preview {
+            opacity: 1;
+        }
+
+        /* Agent ranking */
+        .agent-ranking {
+            display: flex;
+            align-items: center;
+            margin-top: 0.8rem;
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .agent-ranking-stars {
+            display: flex;
+            margin-right: 5px;
+            color: var(--warning-color);
+        }
+
+        .agent-ranking-stars i {
+            font-size: 0.7rem;
+        }
+
+        .agent-ranking-value {
+            margin-right: 5px;
+        }
+
+        .delivery-option-checkbox {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(var(--text-light-rgb), 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delivery-option.selected .delivery-option-checkbox {
+            background-color: var(--primary-glow);
+            border-color: var(--primary-glow);
+        }
+
+        [data-theme="cyberpunk"] .delivery-option.selected .delivery-option-checkbox {
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .delivery-option-checkbox i {
+            opacity: 0;
+            color: var(--bg-dark);
+            font-size: 0.7rem;
+            transition: opacity 0.3s ease;
+        }
+
+        .delivery-option.selected .delivery-option-checkbox i {
+            opacity: 1;
+        }
+
+        /* New territory discovery widget */
+        .discovery-widget {
+            position: relative;
+        }
+
+        .discovery-badge {
+            display: inline-flex;
+            align-items: center;
+            background: var(--new-color);
+            color: #fff;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="cyberpunk"] .discovery-badge {
+            background: linear-gradient(135deg, rgba(255, 0, 195, 0.8) 0%, rgba(255, 0, 195, 0.5) 100%);
+            box-shadow: 0 5px 15px rgba(255, 0, 195, 0.2);
+        }
+
+        .discovery-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(var(--new-color-rgb), 0.3);
+        }
+
+        .discovery-badge i {
+            margin-right: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        [data-theme="cyberpunk"] .discovery-badge i {
+            text-shadow: 0 0 5px #fff;
+        }
+
+        .discovery-description {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .discovery-title {
+            font-weight: 600;
+            margin: 1.5rem 0 0.8rem 0;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .discovery-title i {
+            margin-right: 0.5rem;
+            color: var(--primary-glow);
+        }
+
+        /* Freelancer cards in discovery widget */
+        .freelancers-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+        }
+
+        .freelancer-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 1rem;
+            position: relative;
+            transition: all 0.3s ease;
+            border: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            height: 100%;
+        }
+
+        [data-theme="cyberpunk"] .freelancer-card {
+            background-color: rgba(18, 26, 41, 0.4);
+            border: 1px solid rgba(var(--text-light-rgb), 0.1);
+        }
+
+        .freelancer-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px var(--shadow-color);
+        }
+
+        [data-theme="cyberpunk"] .freelancer-card:hover {
+            background-color: rgba(24, 35, 56, 0.6);
+            border-color: rgba(var(--primary-glow-rgb), 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+        }
+
+        .freelancer-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-size: cover;
+            margin: 0 auto 0.8rem auto;
+            position: relative;
+            border: 2px solid rgba(var(--text-light-rgb), 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .freelancer-card:hover .freelancer-avatar {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px var(--shadow-color);
+        }
+
+        .freelancer-avatar::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-glow);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="cyberpunk"] .freelancer-card:hover .freelancer-avatar::after {
+            opacity: 0.7;
+            animation: pulse 2s infinite;
+        }
+
+        .online-badge {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--success-color);
+            border: 2px solid var(--card-bg);
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="cyberpunk"] .online-badge {
+            box-shadow: 0 0 8px var(--success-color);
+        }
+
+        .freelancer-card:hover .online-badge {
+            transform: scale(1.2);
+        }
+
+        .freelancer-info {
+            text-align: center;
+        }
+
+        .freelancer-info h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color 0.3s ease;
+        }
+
+        .freelancer-card:hover .freelancer-info h4 {
+            color: var(--primary-glow);
+        }
+
+        .freelancer-info p {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            justify-content: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .skill-tag {
+            font-size: 0.65rem;
+            background-color: rgba(var(--primary-glow-rgb), 0.1);
+            color: var(--primary-glow);
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+            border: 1px solid rgba(var(--primary-glow-rgb), 0.2);
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="cyberpunk"] .freelancer-card:hover .skill-tag {
+            background-color: rgba(var(--primary-glow-rgb), 0.2);
+            box-shadow: 0 0 8px rgba(var(--primary-glow-rgb), 0.2);
+        }
+
+        .rating {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: auto;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .rating-stars {
+            display: flex;
+            align-items: center;
+            margin-right: 5px;
+            color: var(--warning-color);
+            font-size: 0.7rem;
+        }
+
+        [data-theme="cyberpunk"] .rating-stars {
+            text-shadow: 0 0 3px var(--warning-color);
+        }
+
+        .rating-value {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .rating-count {
+            font-size: 0.7rem;
+            opacity: 0.5;
+            margin-left: 3px;
+        }
+
+        /* Requirements gathering forms */
+        .requirements-form {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-label i {
+            margin-right: 0.5rem;
+            color: var(--primary-glow);
+            font-size: 0.8rem;
+        }
+
+        .form-input {
+            background-color: rgba(var(--bg-dark-rgb, 7, 10, 16), 0.3);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 0.8rem;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary-glow);
+            box-shadow: 0 0 15px rgba(var(--primary-glow-rgb), 0.1);
+        }
+
+        /* Color picker for logo requirements */
+        .color-options {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: var(--text-light);
+            transform: scale(1.1);
+        }
+
+        .color-option.selected::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            font-size: 0.7rem;
+        }
+
+        /* Chat typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+            opacity: 0.7;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-light);
+            margin-right: 4px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+            margin-right: 0;
+        }
+
+        @keyframes typingAnimation {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+
+        /* Action buttons in messages */
+        .message-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .message-action-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: rgba(var(--text-light-rgb), 0.1);
+            color: var(--text-light);
+            border: 1px solid rgba(var(--text-light-rgb), 0.1);
+        }
+
+        .message-action-btn:hover {
+            background-color: rgba(var(--text-light-rgb), 0.15);
+            transform: translateY(-2px);
+        }
+
+        .message-action-btn.primary {
+            background-color: var(--primary-glow);
+            color: var(--bg-dark);
+            border-color: var(--primary-glow);
+        }
+
+        .message-action-btn.human-touch {
+            background-color: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        [data-theme="cyberpunk"] .message-action-btn.primary {
+            box-shadow: 0 0 10px rgba(var(--primary-glow-rgb), 0.3);
+        }
+
+        [data-theme="cyberpunk"] .message-action-btn.human-touch {
+            box-shadow: 0 0 10px rgba(var(--accent-blue-rgb), 0.3);
+        }
+
+        .message-action-btn.primary:hover {
+            box-shadow: 0 5px 15px rgba(var(--primary-glow-rgb), 0.3);
+        }
+
+        .message-action-btn.human-touch:hover {
+            box-shadow: 0 5px 15px rgba(var(--accent-blue-rgb), 0.3);
+        }
+
+        /* Talk now and schedule meeting buttons */
+        .message-action-btn.talk-now,
+        .message-action-btn.schedule-meeting {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.6rem 1.2rem;
+        }
+
+        .message-action-btn.talk-now {
+            background-color: var(--success-color);
+            color: var(--bg-dark);
+            border-color: var(--success-color);
+        }
+
+        [data-theme="cyberpunk"] .message-action-btn.talk-now {
+            box-shadow: 0 0 10px rgba(var(--success-color-rgb), 0.3);
+        }
+
+        .message-action-btn.talk-now:hover {
+            box-shadow: 0 5px 15px rgba(var(--success-color-rgb), 0.3);
+        }
+
+        .message-action-btn.schedule-meeting {
+            background-color: var(--primary-glow);
+            color: var(--bg-dark);
+            border-color: var(--primary-glow);
+        }
+
+        [data-theme="cyberpunk"] .message-action-btn.schedule-meeting {
+            box-shadow: 0 0 10px rgba(var(--primary-glow-rgb), 0.3);
+        }
+
+        .message-action-btn.schedule-meeting:hover {
+            box-shadow: 0 5px 15px rgba(var(--primary-glow-rgb), 0.3);
+        }
+
+        /* Call animation elements */
+        .call-rings {
+            position: absolute;
+            top: -15px;
+            left: -15px;
+            right: -15px;
+            bottom: -15px;
+            border: 3px solid var(--primary-glow);
+            border-radius: 50%;
+            animation: callRings 1.5s infinite;
+            opacity: 0;
+        }
+
+        @keyframes callRings {
+            0% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* Scheduling widget elements */
+        .dates-row {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .date-option {
+            padding: 0.5rem;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            min-width: 80px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .date-option:hover {
+            border-color: var(--primary-glow);
+            background-color: rgba(var(--primary-glow-rgb), 0.05);
+        }
+
+        .times-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .time-option {
+            padding: 0.5rem;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .time-option:hover {
+            border-color: var(--primary-glow);
+            background-color: rgba(var(--primary-glow-rgb), 0.05);
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeUp {
+            from { 
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .brand h1 {
+                font-size: 2.5rem;
+            }
+            .delivery-options, .freelancers-grid {
+                grid-template-columns: 1fr;
+            }
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+            }
+            .nexus-container {
+                width: 95%;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+
+    <!-- Theme Toggle -->
+    <div class="theme-toggle" id="themeToggle">
+        <div class="theme-tooltip">Switch to Google/Cyberpunk Theme</div>
+        <div class="toggle-track">
+            <div class="toggle-thumb"></div>
+            <div class="toggle-icon toggle-icon-cyber">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <div class="toggle-icon toggle-icon-google">
+                <i class="fab fa-google"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="nexus-container">
+        <div class="brand">
+            <h1>
+                <span style="--index:1" class="glitch-animation">N</span>
+                <span style="--index:2" class="glitch-animation">E</span>
+                <span style="--index:3" class="glitch-animation">X</span>
+                <span style="--index:4" class="glitch-animation">U</span>
+                <span style="--index:5" class="glitch-animation">S</span>
+            </h1>
+            <p>Tell us what you need, and we'll find the perfect solution through our network of AI agents and expert freelancers.</p>
+        </div>
+
+        <!-- Input area at top (always visible) -->
+        <div class="request-container" id="requestContainer">
+            <textarea id="requestBox" class="request-box" placeholder="Describe what you need created..."></textarea>
+            <div class="glow-effect" id="glowEffect"></div>
+            <button id="submitBtn" class="submit-btn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+
+        <!-- Chat frame that appears after submission -->
+        <div id="chatFrame" class="chat-frame">
+            <div class="chat-header">
+                <div class="chat-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="chat-title">NEXUS Assistant</div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages will be inserted here via JS -->
+            </div>
+        </div>
+    </div>
+
+<script>
+    // DOM Elements
+    const htmlElement = document.documentElement;
+    const themeToggle = document.getElementById('themeToggle');
+    const requestBox = document.getElementById('requestBox');
+    const glowEffect = document.getElementById('glowEffect');
+    const submitBtn = document.getElementById('submitBtn');
+    const requestContainer = document.getElementById('requestContainer');
+    const chatFrame = document.getElementById('chatFrame');
+    const chatMessages = document.getElementById('chatMessages');
+
+    // Initial setup
+    document.addEventListener('DOMContentLoaded', () => {
+        createBrandAnimation();
+    });
+
+    // Theme toggle
+    themeToggle.addEventListener('click', function() {
+        if (htmlElement.getAttribute('data-theme') === 'cyberpunk') {
+            htmlElement.setAttribute('data-theme', 'google');
+            themeToggle.querySelector('.theme-tooltip').textContent = 'Switch to Cyberpunk Theme';
+        } else {
+            htmlElement.setAttribute('data-theme', 'cyberpunk');
+            themeToggle.querySelector('.theme-tooltip').textContent = 'Switch to Google Theme';
+        }
+    });
+
+    // Create NEXUS brand animation
+    function createBrandAnimation() {
+        const letters = document.querySelectorAll('.brand h1 span');
+        letters.forEach((letter, index) => {
+            letter.addEventListener('mouseover', () => {
+                letter.style.color = getComputedStyle(document.documentElement).getPropertyValue('--primary-glow');
+                if (htmlElement.getAttribute('data-theme') === 'cyberpunk') {
+                    letter.style.textShadow = `0 0 10px ${getComputedStyle(document.documentElement).getPropertyValue('--primary-glow')}`;
+                }
+            });
+
+            letter.addEventListener('mouseout', () => {
+                if (index % 2 !== 0 && htmlElement.getAttribute('data-theme') === 'cyberpunk') {
+                    letter.style.color = getComputedStyle(document.documentElement).getPropertyValue('--primary-glow');
+                } else {
+                    letter.style.color = getComputedStyle(document.documentElement).getPropertyValue('--text-light');
+                }
+                letter.style.textShadow = '';
+            });
+        });
+    }
+
+    // Handle text input
+    requestBox.addEventListener('input', function() {
+        if (requestBox.value.trim().length > 0) {
+            glowEffect.style.opacity = '1';
+            submitBtn.classList.add('active');
+            requestContainer.classList.add('active');
+        } else {
+            glowEffect.style.opacity = '0';
+            submitBtn.classList.remove('active');
+            requestContainer.classList.remove('active');
+        }
+    });
+
+    // Handle request submission
+    submitBtn.addEventListener('click', function() {
+        if (requestBox.value.trim().length === 0) return;
+
+        // Get the request text
+        const requestText = requestBox.value.trim();
+
+        // Clear the input
+        requestBox.value = '';
+        submitBtn.classList.remove('active');
+        glowEffect.style.opacity = '0';
+
+        // Show the chat frame if not already visible
+        if (!chatFrame.classList.contains('active')) {
+            chatFrame.classList.add('active');
+            setTimeout(() => {
+                // Scroll to chat frame
+                chatFrame.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        // Add user message
+        addMessage('user', requestText);
+
+        // Start the conversation flow
+        startConversationFlow(requestText);
+    });
+
+    // Add a message to the chat
+    function addMessage(type, text, widget = null) {
+        const message = document.createElement('div');
+        message.className = `message message-${type}`;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+
+        if (type === 'ai') {
+            avatar.innerHTML = '<i class="fas fa-robot"></i>';
+        } else {
+            avatar.innerHTML = '<i class="fas fa-user"></i>';
+        }
+
+        const content = document.createElement('div');
+        content.className = 'message-content';
+
+        const textEl = document.createElement('div');
+        textEl.className = 'message-text';
+        textEl.innerHTML = text;
+
+        const time = document.createElement('div');
+        time.className = 'message-time';
+        time.textContent = getTimeString();
+
+        content.appendChild(textEl);
+        content.appendChild(time);
+
+        if (widget) {
+            content.appendChild(widget);
+        }
+
+        if (type === 'ai') {
+            message.appendChild(avatar);
+            message.appendChild(content);
+        } else {
+            message.appendChild(content);
+            message.appendChild(avatar);
+        }
+
+        chatMessages.appendChild(message);
+
+        // Scroll to the bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        return message;
+    }
+
+    // Add a typing indicator
+    function addTypingIndicator() {
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'typing-indicator';
+        typingIndicator.innerHTML = `
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        `;
+
+        const message = document.createElement('div');
+        message.className = 'message message-ai';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+        avatar.innerHTML = '<i class="fas fa-robot"></i>';
+
+        const content = document.createElement('div');
+        content.className = 'message-content';
+        content.appendChild(typingIndicator);
+
+        message.appendChild(avatar);
+        message.appendChild(content);
+
+        chatMessages.appendChild(message);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        return message;
+    }
+
+    // Start the conversation flow based on the request
+    function startConversationFlow(requestText) {
+        // Add typing indicator
+        const typingIndicator = addTypingIndicator();
+
+        // Simulate thinking
+        setTimeout(() => {
+            // Remove typing indicator
+            chatMessages.removeChild(typingIndicator);
+
+            // Add first response
+            addMessage('ai', "I'm analyzing your request...");
+
+            // Create neural network widget
+            const neuralWidget = createNeuralNetworkWidget();
+
+            // Add message with widget
+            addMessage('ai', "Searching our AI agent network for the perfect solution for you...", neuralWidget);
+
+            // Simulate neural network analysis
+            simulateNeuralNetworkAnalysis(requestText, neuralWidget);
+        }, 1000);
+    }
+
+    // Create neural network widget
+    function createNeuralNetworkWidget() {
+        const widget = document.createElement('div');
+        widget.className = 'message-widget';
+
+        const header = document.createElement('div');
+        header.className = 'widget-header';
+        header.innerHTML = `
+            <div class="widget-icon">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <div class="widget-title">AI Agent Network Search</div>
+        `;
+
+        const content = document.createElement('div');
+        content.className = 'neural-widget widget-content';
+        content.innerHTML = `
+            <div class="neural-network" id="neuralNetwork"></div>
+            <div class="neural-status">
+                <i class="fas fa-sync-alt fa-spin"></i>
+                <span>Searching AI agent network...</span>
+            </div>
+            <div class="neural-legend">
+                <div class="legend-item">
+                    <div class="legend-color c1"></div>
+                    <span>Dev</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color c2"></div>
+                    <span>Content</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color c3"></div>
+                    <span>Creative</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color c4"></div>
+                    <span>Business</span>
+                </div>
+            </div>
+        `;
+
+        widget.appendChild(header);
+        widget.appendChild(content);
+
+        return widget;
+    }
+
+    // Create neural network visualization with dynamic categories
+    function createNeuralNetwork(widget) {
+        const neuralNetwork = widget.querySelector('.neural-network');
+        neuralNetwork.innerHTML = '';
+
+        // Create root node
+        const rootNode = document.createElement('div');
+        rootNode.className = 'node root';
+        rootNode.dataset.id = 'root';
+        rootNode.dataset.name = 'Services';
+        rootNode.style.left = '50%';
+        rootNode.style.top = '50%';
+        neuralNetwork.appendChild(rootNode);
+
+        // Create root node label
+        const rootLabel = document.createElement('div');
+        rootLabel.className = 'node-label';
+        rootLabel.textContent = 'Services';
+        rootLabel.style.left = '50%';
+        rootLabel.style.top = '45%';
+        neuralNetwork.appendChild(rootLabel);
+
+        // Fetch agent categories from database (simulated)
+        fetchAgentCategories().then(categories => {
+            // Draw categories
+            categories.forEach((category, i) => {
+                const angle = (i * (2 * Math.PI / categories.length));
+                const x = 50 + Math.cos(angle) * 30;
+                const y = 50 + Math.sin(angle) * 30;
+
+                const node = document.createElement('div');
+                node.className = `node category-${category.id}`;
+                node.dataset.id = `cat-${category.id}`;
+                node.dataset.name = category.name;
+                node.style.left = `${x}%`;
+                node.style.top = `${y}%`;
+                neuralNetwork.appendChild(node);
+
+                // Create node label
+                const label = document.createElement('div');
+                label.className = 'node-label';
+                label.textContent = category.name;
+                label.style.left = `${x}%`;
+                label.style.top = `${y - 6}%`;
+                neuralNetwork.appendChild(label);
+
+                // Create connection to root
+                createConnection(neuralNetwork, 50, 50, x, y, category.id);
+
+                // Fetch subcategories for this category
+                fetchSubcategories(category.id).then(subcategories => {
+                    // Limit to 3 subcategories for visualization
+                    const visibleSubcats = subcategories.slice(0, 3);
+
+                    visibleSubcats.forEach((subcat, j) => {
+                        const subAngle = angle + (j - 1) * Math.PI / 8;
+                        const subX = x + Math.cos(subAngle) * 15;
+                        const subY = y + Math.sin(subAngle) * 10;
+
+                        const subNode = document.createElement('div');
+                        subNode.className = `node category-${category.id}`;
+                        subNode.dataset.id = `subcat-${category.id}-${j}`;
+                        subNode.dataset.name = subcat.name;
+                        subNode.style.left = `${subX}%`;
+                        subNode.style.top = `${subY}%`;
+                        neuralNetwork.appendChild(subNode);
+
+                        // Create subcategory label
+                        const subLabel = document.createElement('div');
+                        subLabel.className = 'node-label';
+                        subLabel.textContent = subcat.name;
+                        subLabel.style.left = `${subX}%`;
+                        subLabel.style.top = `${subY - 5}%`;
+                        neuralNetwork.appendChild(subLabel);
+
+                        // Create connection to category
+                        createConnection(neuralNetwork, x, y, subX, subY, category.id);
+                    });
+                });
+            });
+        });
+
+        return neuralNetwork;
+    }
+
+    // Simulated API calls to fetch agent data
+    function fetchAgentCategories() {
+        // Normally an API call, simulated with static data for now
+        return new Promise(resolve => {
+            setTimeout(() => {
+                resolve([
+                    { id: 1, name: 'Development', color: 'primary-glow' },
+                    { id: 2, name: 'Content', color: 'warning-color' },
+                    { id: 3, name: 'Creative', color: 'new-color' },
+                    { id: 4, name: 'Business', color: 'accent-blue' },
+                    { id: 5, name: 'Finance', color: 'primary-glow' } // Extra category!
+                ]);
+            }, 300);
+        });
+    }
+
+    function fetchSubcategories(categoryId) {
+        // Simulated API call
+        return new Promise(resolve => {
+            setTimeout(() => {
+                const subcats = {
+                    1: [
+                        { id: 1, name: 'Web' },
+                        { id: 2, name: 'Mobile' },
+                        { id: 3, name: 'Software' }
+                    ],
+                    2: [
+                        { id: 4, name: 'Copy' },
+                        { id: 5, name: 'Blog' },
+                        { id: 6, name: 'SEO' }
+                    ],
+                    3: [
+                        { id: 7, name: 'Logo' },
+                        { id: 8, name: 'UI/UX' },
+                        { id: 9, name: 'Graphic' }
+                    ],
+                    4: [
+                        { id: 10, name: 'Marketing' },
+                        { id: 11, name: 'Analytics' },
+                        { id: 12, name: 'Strategy' }
+                    ],
+                    5: [
+                        { id: 13, name: 'Accounting' },
+                        { id: 14, name: 'Taxation' },
+                        { id: 15, name: 'Investment' }
+                    ]
+                };
+                resolve(subcats[categoryId] || []);
+            }, 300);
+        });
+    }
+
+    // Create connection between two points
+    function createConnection(container, x1, y1, x2, y2, categoryId) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+        const path = document.createElement('div');
+        path.className = `path category-${categoryId}`;
+        path.style.width = `${distance}%`;
+        path.style.left = `${x1}%`;
+        path.style.top = `${y1}%`;
+        path.style.transform = `rotate(${angle}deg)`;
+
+        container.appendChild(path);
+        return path;
+    }
+
+    // Simulate neural network analysis
+    function simulateNeuralNetworkAnalysis(requestText, neuralWidget) {
+        // Create the neural network
+        createNeuralNetwork(neuralWidget);
+
+        // Determine response type based on text content
+        let responseType, categoryId;
+        if (requestText.toLowerCase().includes('website') || 
+            requestText.toLowerCase().includes('app') || 
+            requestText.toLowerCase().includes('develop') ||
+            requestText.toLowerCase().includes('code') ||
+            requestText.toLowerCase().includes('program')) {
+            responseType = 'match';
+            categoryId = 1; // Development
+        } else if (requestText.toLowerCase().includes('content') || 
+                  requestText.toLowerCase().includes('write') || 
+                  requestText.toLowerCase().includes('article') ||
+                  requestText.toLowerCase().includes('copy') ||
+                  requestText.toLowerCase().includes('blog')) {
+            responseType = 'partial';
+            categoryId = 2; // Content
+        } else if (requestText.toLowerCase().includes('design') || 
+                  requestText.toLowerCase().includes('logo') || 
+                  requestText.toLowerCase().includes('creative') ||
+                  requestText.toLowerCase().includes('video') ||
+                  requestText.toLowerCase().includes('animation')) {
+            responseType = 'match';
+            categoryId = 3; // Creative
+        } else {
+            responseType = 'new';
+            categoryId = null;
+        }
+
+        // Animate the network
+        const nodes = neuralWidget.querySelectorAll('.node');
+        const paths = neuralWidget.querySelectorAll('.path');
+
+        // Highlight root node
+        setTimeout(() => {
+            nodes[0].classList.add('highlight');
+
+            // Simulate searching through categories
+            animateNetworkSearch(nodes, paths, categoryId, () => {
+                // Update status
+                const statusText = neuralWidget.querySelector('.neural-status span');
+
+                if (responseType === 'match') {
+                    statusText.innerHTML = `<span style="color: var(--success-color);">Perfect match found!</span>`;
+                } else if (responseType === 'partial') {
+                    statusText.innerHTML = `<span style="color: var(--warning-color);">Partial match found</span>`;
+                } else {
+                    statusText.innerHTML = `<span style="color: var(--new-color);">New territory discovered!</span>`;
+                }
+
+                // Continue conversation based on response type
+                setTimeout(() => {
+                    continueConversation(responseType, categoryId, requestText);
+                }, 1000);
+            });
+        }, 800);
+    }
+
+    // Animate through the network search
+    function animateNetworkSearch(nodes, paths, categoryId, callback) {
+        let currentNode = 1; // Start from 1 (after root)
+        let currentPath = 0;
+
+        // First highlight category nodes in sequence
+        let nodesToHighlight = Array.from(nodes).filter(node => 
+            node.dataset.id && node.dataset.id.startsWith('cat-')
+        );
+
+        // If we have a category, prioritize that one
+        if (categoryId) {
+            nodesToHighlight.sort((a, b) => {
+                const aIsCategory = a.classList.contains(`category-${categoryId}`);
+                const bIsCategory = b.classList.contains(`category-${categoryId}`);
+                return bIsCategory - aIsCategory;
+            });
+        }
+
+        // Highlight category nodes first
+        highlightNodesSequence(nodesToHighlight, paths, 0, () => {
+            // Then highlight subcategory nodes if we have a category match
+            if (categoryId) {
+                const subNodes = Array.from(nodes).filter(node => 
+                    node.dataset.id && node.dataset.id.startsWith(`subcat-${categoryId}`)
+                );
+
+                highlightNodesSequence(subNodes, paths, 0, callback);
+            } else {
+                callback();
+            }
+        });
+    }
+
+    // Highlight nodes in sequence
+    function highlightNodesSequence(nodes, paths, currentIndex, callback) {
+        if (currentIndex >= nodes.length) {
+            callback();
+            return;
+        }
+
+        // Highlight current node
+        nodes[currentIndex].classList.add('highlight');
+
+        // Find and highlight paths connected to this node
+        paths.forEach(path => {
+            const nodeRect = nodes[currentIndex].getBoundingClientRect();
+            const pathRect = path.getBoundingClientRect();
+
+            // Simple check if path starts or ends near this node
+            if (Math.abs(pathRect.left - nodeRect.left) < 20 && 
+                Math.abs(pathRect.top - nodeRect.top) < 20) {
+                path.classList.add('active');
+            }
+        });
+
+        // Move to next node after delay
+        setTimeout(() => {
+            highlightNodesSequence(nodes, paths, currentIndex + 1, callback);
+        }, 300);
+    }
+
+    // Continue conversation based on response type
+    function continueConversation(responseType, categoryId, requestText) {
+        const typingIndicator = addTypingIndicator();
+
+        setTimeout(() => {
+            chatMessages.removeChild(typingIndicator);
+
+            if (responseType === 'match') {
+                handleMatchResponse(categoryId, requestText);
+            } else if (responseType === 'partial') {
+                handlePartialMatchResponse(categoryId, requestText);
+            } else {
+                handleNewTerritoryResponse(requestText);
+            }
+        }, 1000);
+    }
+
+    // Handle Perfect Match Response
+    function handleMatchResponse(categoryId, requestText) {
+        // Check if it's a logo design request
+        if (categoryId === 3 && (requestText.toLowerCase().includes('logo') || 
+                                 requestText.toLowerCase().includes('brand'))) {
+            handleLogoRequest(requestText);
+        } else {
+            // Generic match response
+            addMessage('ai', `I've found a perfect match for your request in our ${getCategoryName(categoryId)} category!`);
+
+            // Add follow-up questions based on category
+            if (categoryId === 1) { // Development
+                addMessage('ai', "Let me gather some details to help our AI agents create exactly what you need. What platform(s) will this be used on? (Web, Mobile, Desktop)");
+            } else if (categoryId === 2) { // Content
+                addMessage('ai', "Great! Let me gather some details for our AI content specialists. What's the target audience for this content?");
+            } else if (categoryId === 3) { // Creative
+                addMessage('ai', "Perfect! To help our AI creative agents get started, could you describe the style you're looking for? (Modern, Minimalist, Bold, etc.)");
+            } else { // Business
+                addMessage('ai', "Excellent! Let me gather some details to help our business solution agents. What's the primary goal of this project?");
+            }
+
+            // Add action buttons
+            const lastMessage = chatMessages.lastElementChild;
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+
+            if (categoryId === 1) { // Development
+                actionsDiv.innerHTML = `
+                    <button class="message-action-btn">Web</button>
+                    <button class="message-action-btn">Mobile</button>
+                    <button class="message-action-btn">Desktop</button>
+                    <button class="message-action-btn">All Platforms</button>
+                `;
+            } else if (categoryId === 2) { // Content
+                actionsDiv.innerHTML = `
+                    <button class="message-action-btn">General Audience</button>
+                    <button class="message-action-btn">Professionals</button>
+                    <button class="message-action-btn">Technical</button>
+                    <button class="message-action-btn">Creative</button>
+                `;
+            } else if (categoryId === 3) { // Creative
+                actionsDiv.innerHTML = `
+                    <button class="message-action-btn">Modern</button>
+                    <button class="message-action-btn">Minimalist</button>
+                    <button class="message-action-btn">Bold</button>
+                    <button class="message-action-btn">Elegant</button>
+                `;
+            } else { // Business
+                actionsDiv.innerHTML = `
+                    <button class="message-action-btn">Increase Sales</button>
+                    <button class="message-action-btn">Brand Awareness</button>
+                    <button class="message-action-btn">Customer Retention</button>
+                    <button class="message-action-btn">Lead Generation</button>
+                `;
+            }
+
+            lastMessage.querySelector('.message-content').appendChild(actionsDiv);
+
+            // Add event listeners to buttons
+            actionsDiv.querySelectorAll('.message-action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Send user message with selection
+                    addMessage('user', btn.textContent);
+
+                    // Show typing indicator
+                    const typingIndicator = addTypingIndicator();
+
+                    // Send second requirement question
+                    setTimeout(() => {
+                        chatMessages.removeChild(typingIndicator);
+
+                        if (categoryId === 1) { // Development
+                            addMessage('ai', "Thanks! And what features are most important for your project?");
+                            addSecondRequirementOptions(categoryId, "User Experience", "Performance", "Security", "Scalability");
+                        } else if (categoryId === 2) { // Content
+                            addMessage('ai', "Got it! And what's the primary purpose of this content?");
+                            addSecondRequirementOptions(categoryId, "Informative", "Persuasive", "Educational", "Entertaining");
+                        } else if (categoryId === 3) { // Creative
+                            addMessage('ai', "Perfect! And what colors would you prefer?");
+                            addColorOptions();
+                        } else { // Business
+                            addMessage('ai', "Understood! What's your timeline for this project?");
+                            addSecondRequirementOptions(categoryId, "ASAP", "Within a week", "2-4 weeks", "Flexible");
+                        }
+                    }, 1000);
+                });
+            });
+        }
+    }
+
+    // Add second requirement options
+    function addSecondRequirementOptions(categoryId, opt1, opt2, opt3, opt4) {
+        const lastMessage = chatMessages.lastElementChild;
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'message-actions';
+        actionsDiv.innerHTML = `
+            <button class="message-action-btn">${opt1}</button>
+            <button class="message-action-btn">${opt2}</button>
+            <button class="message-action-btn">${opt3}</button>
+            <button class="message-action-btn">${opt4}</button>
+        `;
+
+        lastMessage.querySelector('.message-content').appendChild(actionsDiv);
+
+        // Add event listeners
+        actionsDiv.querySelectorAll('.message-action-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Send user message with selection
+                addMessage('user', btn.textContent);
+
+                // Show typing indicator
+                const typingIndicator = addTypingIndicator();
+
+                // Show generation message
+                setTimeout(() => {
+                    chatMessages.removeChild(typingIndicator);
+
+                    // Show solution progress widget
+                    const solutionWidget = createSolutionWidget();
+                    addMessage('ai', "Thanks for the details! I'm preparing your solution now.", solutionWidget);
+
+                    // Simulate solution progress
+                    simulateSolutionProgress(solutionWidget, () => {
+                        // Show delivery options with 4 agents
+                        const deliveryWidget = createAgentDeliveryWidget(categoryId);
+                        addMessage('ai', "Your solution is ready! Our 4 AI agents have each created a different approach based on your requirements. Please select the one you prefer:", deliveryWidget);
+                    });
+                }, 1000);
+            });
+        });
+    }
+
+    // Add color options for creative requests
+    function addColorOptions() {
+        const lastMessage = chatMessages.lastElementChild;
+        const colorDiv = document.createElement('div');
+        colorDiv.className = 'color-options';
+
+        const colors = [
+            { name: 'Blue', hex: '#2196F3' },
+            { name: 'Green', hex: '#4CAF50' },
+            { name: 'Red', hex: '#F44336' },
+            { name: 'Purple', hex: '#9C27B0' },
+            { name: 'Orange', hex: '#FF9800' },
+            { name: 'Teal', hex: '#009688' }
+        ];
+
+        colors.forEach(color => {
+            const colorOption = document.createElement('div');
+            colorOption.className = 'color-option';
+            colorOption.style.backgroundColor = color.hex;
+            colorOption.dataset.color = color.name;
+            colorDiv.appendChild(colorOption);
+        });
+
+        lastMessage.querySelector('.message-content').appendChild(colorDiv);
+
+        // Add event listeners
+        colorDiv.querySelectorAll('.color-option').forEach(option => {
+            option.addEventListener('click', function() {
+                // Deselect others
+                colorDiv.querySelectorAll('.color-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+
+                // Select this one
+                this.classList.add('selected');
+
+                // Send user message
+                addMessage('user', `I prefer ${this.dataset.color} colors.`);
+
+                // Show generate button
+                const typingIndicator = addTypingIndicator();
+
+                setTimeout(() => {
+                    chatMessages.removeChild(typingIndicator);
+                    addMessage('ai', "Great choice! Ready to generate your designs?");
+
+                    // Add generate button
+                    const lastMsg = chatMessages.lastElementChild;
+                    const generateBtn = document.createElement('button');
+                    generateBtn.className = 'generate-btn';
+                    generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate Designs';
+                    lastMsg.querySelector('.message-content').appendChild(generateBtn);
+
+                    // Add event listener
+                    generateBtn.addEventListener('click', function() {
+                        // Show solution progress widget
+                        const solutionWidget = createSolutionWidget();
+                        addMessage('ai', "Generating your designs now. This will only take a moment.", solutionWidget);
+
+                        // Simulate solution progress
+                        simulateSolutionProgress(solutionWidget, () => {
+                            // Show delivery options with 4 agents
+                            const deliveryWidget = createAgentDeliveryWidget(3); // Creative category
+                            addMessage('ai', "Your designs are ready! Our 4 AI design agents have each created a different approach. Please select the one you prefer:", deliveryWidget);
+                        });
+                    });
+                }, 1000);
+            });
+        });
+    }
+
+    // Handle Logo Request (special flow for logo design)
+    function handleLogoRequest(requestText) {
+        addMessage('ai', "Perfect! I've found our logo design specialists. To create the best logo for you, I'll need a few details.");
+
+        setTimeout(() => {
+            addMessage('ai', "What industry or business type is this logo for?");
+
+            // Add form for logo requirements
+            const formWidget = document.createElement('div');
+            formWidget.className = 'message-widget';
+
+            const header = document.createElement('div');
+            header.className = 'widget-header';
+            header.innerHTML = `
+                <div class="widget-icon">
+                    <i class="fas fa-pencil-alt"></i>
+                </div>
+                <div class="widget-title">Logo Requirements</div>
+            `;
+
+            const content = document.createElement('div');
+            content.className = 'widget-content';
+            content.innerHTML = `
+                <div class="requirements-form">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-briefcase"></i> Industry/Business Type</label>
+                        <input type="text" class="form-input" id="logo-industry" placeholder="E.g. Technology, Restaurant, Healthcare...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-font"></i> Company Name</label>
+                        <input type="text" class="form-input" id="logo-name" placeholder="Name to include in the logo">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-palette"></i> Color Preferences</label>
+                        <div class="color-options">
+                            <div class="color-option" style="background-color: #2196F3;" data-color="Blue"></div>
+                            <div class="color-option" style="background-color: #4CAF50;" data-color="Green"></div>
+                            <div class="color-option" style="background-color: #F44336;" data-color="Red"></div>
+                            <div class="color-option"style="background-color: #9C27B0;" data-color="Purple"></div>
+                            <div class="color-option" style="background-color: #FF9800;" data-color="Orange"></div>
+                            <div class="color-option" style="background-color: #009688;" data-color="Teal"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-star"></i> Style Preference</label>
+                        <div class="message-actions">
+                            <button class="message-action-btn" data-style="Modern">Modern</button>
+                            <button class="message-action-btn" data-style="Minimalist">Minimalist</button>
+                            <button class="message-action-btn" data-style="Bold">Bold</button>
+                            <button class="message-action-btn" data-style="Elegant">Elegant</button>
+                        </div>
+                    </div>
+                    <button class="generate-btn"><i class="fas fa-magic"></i> Generate Logo Designs</button>
+                </div>
+            `;
+
+            formWidget.appendChild(header);
+            formWidget.appendChild(content);
+
+            // Add the widget
+            addMessage('ai', "Please fill out these details to help our AI agents create the perfect logo for you:", formWidget);
+
+            // Add event listeners
+            setTimeout(() => {
+                // Color selection
+                formWidget.querySelectorAll('.color-option').forEach(option => {
+                    option.addEventListener('click', function() {
+                        formWidget.querySelectorAll('.color-option').forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+                    });
+                });
+
+                // Style selection
+                formWidget.querySelectorAll('.message-action-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        formWidget.querySelectorAll('.message-action-btn').forEach(b => {
+                            b.classList.remove('primary');
+                        });
+                        this.classList.add('primary');
+                    });
+                });
+
+                // Generate button
+                formWidget.querySelector('.generate-btn').addEventListener('click', function() {
+                    const industry = formWidget.querySelector('#logo-industry').value;
+                    const name = formWidget.querySelector('#logo-name').value;
+                    const color = formWidget.querySelector('.color-option.selected')?.dataset.color || 'Blue';
+                    const style = formWidget.querySelector('.message-action-btn.primary')?.dataset.style || 'Modern';
+
+                    if (!industry || !name) {
+                        alert('Please fill in the industry and company name.');
+                        return;
+                    }
+
+                    // Show user selection
+                    addMessage('user', `I need a ${style} logo for ${name} in the ${industry} industry using ${color} colors.`);
+
+                    // Show solution progress widget
+                    const solutionWidget = createSolutionWidget();
+                    addMessage('ai', "Thanks for the details! I'm generating logo designs from our top AI agents now.", solutionWidget);
+
+                    // Simulate solution progress
+                    simulateSolutionProgress(solutionWidget, () => {
+                        // Show delivery options with 4 agents specifically for logos
+                        const deliveryWidget = createAgentDeliveryWidget(3, true, name); // Creative category, logo specific
+                        addMessage('ai', "Your logo designs are ready! Our 4 AI design agents have each created a different concept. Please select the one you prefer:", deliveryWidget);
+                    });
+                });
+            }, 100);
+        }, 500);
+    }
+
+    // Handle Partial Match Response
+    function handlePartialMatchResponse(categoryId, requestText) {
+        addMessage('ai', `I've found a partial match in our ${getCategoryName(categoryId)} category. Parts of your request are familiar, but others will require a custom approach.`);
+
+        setTimeout(() => {
+            // Add a question based on category
+            if (categoryId === 1) { // Development
+                addMessage('ai', "Could you provide more details about the unique aspects of your project that might not be covered by standard solutions?");
+            } else if (categoryId === 2) { // Content
+                addMessage('ai', "Your content request has some unique elements. Could you share more about what makes this content different from standard approaches?");
+            } else if (categoryId === 3) { // Creative
+                addMessage('ai', "Your creative request has some unique aspects. Could you elaborate on what makes this different from typical designs?");
+            } else { // Business
+                addMessage('ai', "Your business solution request has some unique components. Could you provide more details about what makes this different from standard approaches?");
+            }
+
+            // Add text input for custom response
+            const lastMessage = chatMessages.lastElementChild;
+            const customResponseDiv = document.createElement('div');
+            customResponseDiv.className = 'form-group';
+            customResponseDiv.style.marginTop = '1rem';
+            customResponseDiv.innerHTML = `
+                <textarea class="form-input" id="custom-response" placeholder="Provide additional details here..." rows="3"></textarea>
+                <button class="generate-btn" style="margin-top: 0.5rem;"><i class="fas fa-arrow-right"></i> Submit Details</button>
+            `;
+
+            lastMessage.querySelector('.message-content').appendChild(customResponseDiv);
+
+            // Add event listener
+            customResponseDiv.querySelector('.generate-btn').addEventListener('click', function() {
+                const customResponse = document.getElementById('custom-response').value;
+
+                if (!customResponse) {
+                    alert('Please provide some additional details.');
+                    return;
+                }
+
+                // Send user message
+                addMessage('user', customResponse);
+
+                // Show typing indicator
+                const typingIndicator = addTypingIndicator();
+
+                // Process response
+                setTimeout(() => {
+                    chatMessages.removeChild(typingIndicator);
+                    addMessage('ai', "Thank you for those details! This helps a lot. I'll create a hybrid solution that combines our existing approaches with custom elements for your unique needs.");
+
+                    // Show solution progress widget
+                    const solutionWidget = createSolutionWidget();
+                    addMessage('ai', "Preparing your hybrid solution now...", solutionWidget);
+
+                    // Simulate solution progress
+                    simulateSolutionProgress(solutionWidget, () => {
+                        // Show delivery options with 4 agents
+                        const deliveryWidget = createAgentDeliveryWidget(categoryId);
+                        addMessage('ai', "Your hybrid solution is ready! Our AI agents have each created a different approach that combines standard elements with your unique requirements. Please select the one you prefer:", deliveryWidget);
+                    });
+                }, 1500);
+            });
+        }, 500);
+    }
+
+    // Handle New Territory Response
+    function handleNewTerritoryResponse(requestText) {
+        const discoveryWidget = createDiscoveryWidget();
+        addMessage('ai', "You've discovered new territory! We've never had a request quite like this before.", discoveryWidget);
+
+        setTimeout(() => {
+            addMessage('ai', "While our developer community works on automating solutions for requests like yours, I've identified some freelance specialists who can help you immediately. Would you like to connect with one of them?");
+
+            // Add action buttons
+            const lastMessage = chatMessages.lastElementChild;
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+            actionsDiv.innerHTML = `
+                <button class="message-action-btn">No thanks</button>
+                <button class="message-action-btn primary">Connect with specialist</button>
+            `;
+            lastMessage.querySelector('.message-content').appendChild(actionsDiv);
+
+            // Add event listeners to buttons
+            actionsDiv.querySelectorAll('.message-action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (btn.classList.contains('primary')) {
+                        addMessage('user', "I'd like to connect with a specialist.");
+                        const typingIndicator = addTypingIndicator();
+
+                        setTimeout(() => {
+                            chatMessages.removeChild(typingIndicator);
+                            addMessage('ai', "Great! I'll set up a connection with Jordan Rivera, who specializes in innovative solutions like what you're looking for. What's the best time for an initial consultation?");
+
+                            // Add contact options
+                            const lastMsg = chatMessages.lastElementChild;
+                            const contactOptionsDiv = document.createElement('div');
+                            contactOptionsDiv.className = 'message-actions';
+                            contactOptionsDiv.innerHTML = `
+                                <button class="message-action-btn talk-now"><i class="fas fa-phone-alt"></i> Talk Now</button>
+                                <button class="message-action-btn schedule-meeting"><i class="fas fa-calendar-alt"></i> Schedule Meeting</button>
+                            `;
+
+                            lastMsg.querySelector('.message-content').appendChild(contactOptionsDiv);
+
+                            // Add event listeners for contact options
+                            contactOptionsDiv.querySelector('.talk-now').addEventListener('click', function() {
+                                addMessage('user', "I'd like to talk now.");
+
+                                // Show calling animation
+                                const callingWidget = createCallingWidget('Jordan Rivera');
+                                addMessage('ai', "Connecting you with Jordan Rivera...", callingWidget);
+                            });
+
+                            contactOptionsDiv.querySelector('.schedule-meeting').addEventListener('click', function() {
+                                addMessage('user', "I'd like to schedule a meeting.");
+
+                                // Show scheduling widget
+                                const schedulingWidget = createSchedulingWidget('Jordan Rivera');
+                                addMessage('ai', "Let's find a time that works for you and Jordan Rivera:", schedulingWidget);
+                            });
+                        }, 1000);
+                    } else {
+                        addMessage('user', "No thanks, I'll wait for the automated solution.");
+                        const typingIndicator = addTypingIndicator();
+
+                        setTimeout(() => {
+                            chatMessages.removeChild(typingIndicator);
+                            addMessage('ai', "No problem! I've recorded your request and our developer community will work on creating an automated solution. You'll receive a notification as soon as it's ready. Is there anything else you'd like help with in the meantime?");
+                        }, 1000);
+                    }
+                });
+            });
+        }, 2000);
+    }
+
+    // Create solution progress widget
+    function createSolutionWidget() {
+        const widget = document.createElement('div');
+        widget.className = 'message-widget solution-widget';
+
+        const header = document.createElement('div');
+        header.className = 'widget-header';
+        header.innerHTML = `
+            <div class="widget-icon">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <div class="widget-title">AI Solution in Progress</div>
+        `;
+
+        const content = document.createElement('div');
+        content.className = 'widget-content';
+        content.innerHTML = `
+            <div class="solution-steps">
+                <div class="solution-step" id="step1">
+                    <div class="step-marker"><i class="fas fa-check"></i></div>
+                    <div class="step-content">
+                        <div class="step-title">Analyzing Request</div>
+                        <div class="step-description">Breaking down your requirements</div>
+                    </div>
+                </div>
+                <div class="solution-step" id="step2">
+                    <div class="step-marker"><i class="fas fa-check"></i></div>
+                    <div class="step-content">
+                        <div class="step-title">Gathering Resources</div>
+                        <div class="step-description">Collecting necessary data</div>
+                    </div>
+                </div>
+                <div class="solution-step" id="step3">
+                    <div class="step-marker"><i class="fas fa-check"></i></div>
+                    <div class="step-content">
+                        <div class="step-title">Generating Solution</div>
+                        <div class="step-description">Creating custom solution</div>
+                    </div>
+                </div>
+                <div class="solution-step" id="step4">
+                    <div class="step-marker"><i class="fas fa-check"></i></div>
+                    <div class="step-content">
+                        <div class="step-title">Optimizing Result</div>
+                        <div class="step-description">Refining for best results</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        widget.appendChild(header);
+        widget.appendChild(content);
+
+        return widget;
+    }
+
+    // Simulate solution progress
+    function simulateSolutionProgress(widget, callback) {
+        const steps = [
+            widget.querySelector('#step1'),
+            widget.querySelector('#step2'),
+            widget.querySelector('#step3'),
+            widget.querySelector('#step4')
+        ];
+
+        // Step 1
+        steps[0].classList.add('active');
+
+        setTimeout(() => {
+            steps[0].classList.add('complete');
+            steps[1].classList.add('active');
+
+            setTimeout(() => {
+                steps[1].classList.add('complete');
+                steps[2].classList.add('active');
+
+                setTimeout(() => {
+                    steps[2].classList.add('complete');
+                    steps[3].classList.add('active');
+
+                    setTimeout(() => {
+                        steps[3].classList.add('complete');
+
+                        // Execute callback when done
+                        setTimeout(callback, 500);
+
+                    }, 1000);
+                }, 1200);
+            }, 1000);
+        }, 800);
+    }
+
+    // Create agent delivery options widget
+    function createAgentDeliveryWidget(categoryId, isLogo = false, companyName = '') {
+        const widget = document.createElement('div');
+        widget.className = 'message-widget';
+
+        const header = document.createElement('div');
+        header.className = 'widget-header';
+        header.innerHTML = `
+            <div class="widget-icon">
+                <i class="fas fa-th-large"></i>
+            </div>
+            <div class="widget-title">AI Agent Solutions</div>
+        `;
+
+        const content = document.createElement('div');
+        content.className = 'widget-content';
+
+        // Generate appropriate options based on category
+        let options = [];
+
+        if (isLogo) {
+            // Logo-specific options
+            options = [
+                { agent: 'Atlas', title: 'Bold Geometric', description: `Modern geometric logo for ${companyName}`, icon: 'fas fa-shapes', preview: 'Abstract geometric shapes' },
+                { agent: 'Nova', title: 'Elegant Minimalist', description: `Clean minimalist design for ${companyName}`, icon: 'fas fa-minus-square', preview: 'Clean lines and space' },
+                { agent: 'Pulse', title: 'Dynamic Typography', description: `Creative typography for ${companyName}`, icon: 'fas fa-font', preview: 'Custom letterforms' },
+                { agent: 'Sphere', title: 'Iconic Symbol', description: `Memorable symbol for ${companyName}`, icon: 'fas fa-star', preview: 'Distinctive mark' }
+            ];
+        } else if (categoryId === 1) { // Development
+            options = [
+                { agent: 'Atlas', title: 'Feature-Rich', description: 'Comprehensive solution with all features', icon: 'fas fa-cubes', preview: 'Full feature set' },
+                { agent: 'Nova', title: 'Modern & Minimal', description: 'Clean design with focus on core functionality', icon: 'fas fa-columns', preview: 'Sleek interface' },
+                { agent: 'Pulse', title: 'Performance Optimized', description: 'Lightweight and extremely fast', icon: 'fas fa-tachometer-alt', preview: 'Speed metrics' },
+                { agent: 'Sphere', title: 'Cutting Edge', description: 'Using latest technologies and approaches', icon: 'fas fa-rocket', preview: 'Innovative tech' }
+            ];
+        } else if (categoryId === 2) { // Content
+            options = [
+                { agent: 'Atlas', title: 'Professional', description: 'Formal tone with structured approach', icon: 'fas fa-briefcase', preview: 'Business-focused' },
+                { agent: 'Nova', title: 'Conversational', description: 'Friendly and engaging style', icon: 'fas fa-comments', preview: 'Reader-friendly' },
+                { agent: 'Pulse', title: 'SEO Optimized', description: 'Designed to rank well in search', icon: 'fas fa-search', preview: 'Keyword optimized' },
+                { agent: 'Sphere', title: 'Storytelling', description: 'Narrative approach that captivates', icon: 'fas fa-book-open', preview: 'Engaging narrative' }
+            ];
+        } else if (categoryId === 3) { // Creative
+            options = [
+                { agent: 'Atlas', title: 'Minimalist', description: 'Clean and elegant design approach', icon: 'fas fa-minus-square', preview: 'Simple elegance' },
+                { agent: 'Nova', title: 'Bold & Vibrant', description: 'Eye-catching with strong visual impact', icon: 'fas fa-palette', preview: 'Visual impact' },
+                { agent: 'Pulse', title: 'Corporate', description: 'Professional appearance for business use', icon: 'fas fa-building', preview: 'Professional look' },
+                { agent: 'Sphere', title: 'Avant-garde', description: 'Experimental and cutting-edge design', icon: 'fas fa-magic', preview: 'Innovative concept' }
+            ];
+        } else {
+            options = [
+                { agent: 'Atlas', title: 'Data-Driven', description: 'Analytics-based approach with metrics', icon: 'fas fa-chart-bar', preview: 'Performance metrics' },
+                { agent: 'Nova', title: 'Strategic', description: 'Long-term vision with milestone approach', icon: 'fas fa-chess', preview: 'Strategic roadmap' },
+                { agent: 'Pulse', title: 'Agile Execution', description: 'Flexible implementation with quick wins', icon: 'fas fa-bolt', preview: 'Rapid deployment' },
+                { agent: 'Sphere', title: 'Comprehensive', description: 'All-encompassing solution for total coverage', icon: 'fas fa-globe', preview: 'Full solution' }
+            ];
+        }
+
+        // Set initial rankings
+        options.forEach(option => {
+            option.ranking = (4 + Math.random() * 1).toFixed(1);
+        });
+
+        // Create option grid
+        const optionsHtml = `
+            <div class="delivery-options">
+                ${options.map((option, index) => `
+                    <div class="delivery-option" data-index="${index}" data-agent="${option.agent}">
+                        <div class="delivery-option-header">
+                            <div class="delivery-option-icon">
+                                <i class="${option.icon}"></i>
+                            </div>
+                            <div class="delivery-option-title">${option.title}</div>
+                            <div class="agent-badge">Agent ${option.agent}</div>
+                        </div>
+                        <div class="delivery-option-description">${option.description}</div>
+                        <div class="delivery-option-preview">${option.preview}</div>
+                        <div class="agent-ranking">
+                            <div class="agent-ranking-stars">
+                                ${'★'.repeat(Math.floor(option.ranking))}${option.ranking % 1 >= 0.5 ? '★' : ''}
+                            </div>
+                            <div class="agent-ranking-value">${option.ranking}</div>
+                            <div class="agent-ranking-count">rating</div>
+                        </div>
+                        <div class="delivery-option-checkbox"><i class="fas fa-check"></i></div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        content.innerHTML = optionsHtml;
+
+        widget.appendChild(header);
+        widget.appendChild(content);
+
+        // Add event listeners to options
+        setTimeout(() => {
+            widget.querySelectorAll('.delivery-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    // Deselect all options
+                    widget.querySelectorAll('.delivery-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+
+                    // Select this option
+                    this.classList.add('selected');
+
+                    // Get the selected info
+                    const index = this.dataset.index;
+                    const selectedOption = options[index];
+                    const agentName = this.dataset.agent;
+
+                    // Increase agent ranking
+                    const newRanking = Math.min(5.0, parseFloat(selectedOption.ranking) + 0.1).toFixed(1);
+                    this.querySelector('.agent-ranking-value').textContent = newRanking;
+
+                    // Update stars
+                    const starsElement = this.querySelector('.agent-ranking-stars');
+                    starsElement.innerHTML = '★'.repeat(Math.floor(newRanking)) + (newRanking % 1 >= 0.5 ? '★' : '');
+
+                    // Send a message about the selection
+                    setTimeout(() => {
+                        addMessage('user', `I like the ${selectedOption.title} approach by Agent ${agentName}.`);
+
+                        const typingIndicator = addTypingIndicator();
+
+                        setTimeout(() => {
+                            chatMessages.removeChild(typingIndicator);
+                            addMessage('ai', `Excellent choice! Agent ${agentName}'s ${selectedOption.title} approach is perfect for your needs. I'll finalize this solution and prepare it for delivery. Agent ${agentName} has received a ranking boost for creating a solution that matched your preferences!`);
+
+                            // Add follow-up question
+                            setTimeout(() => {
+                                addMessage('ai', "Would you like to make any adjustments to this solution before finalizing?");
+
+                                const lastMsg = chatMessages.lastElementChild;
+                                const actionsDiv = document.createElement('div');
+                                actionsDiv.className = 'message-actions';
+                                actionsDiv.innerHTML = `
+                                    <button class="message-action-btn">Yes, I'd like some changes</button>
+                                    <button class="message-action-btn primary">No, it's perfect as is</button>
+                                    <button class="message-action-btn human-touch">It's good, but I want a human touch</button>
+                                `;
+
+                                lastMsg.querySelector('.message-content').appendChild(actionsDiv);
+
+                                // Add event listeners
+                                actionsDiv.querySelectorAll('.message-action-btn').forEach(btn => {
+                                    btn.addEventListener('click', function() {
+                                        if (btn.classList.contains('primary')) {
+                                            addMessage('user', "No, it's perfect as is. Thank you!");
+
+                                            const typingIndicator = addTypingIndicator();
+
+                                            setTimeout(() => {
+                                                chatMessages.removeChild(typingIndicator);
+                                                addMessage('ai', "Wonderful! I'm finalizing your solution now. Is there anything else you'd like help with today?");
+                                            }, 1000);
+                                        } 
+                                        else if (btn.classList.contains('human-touch')) {
+                                            // Human touch option
+                                            addMessage('user', "It's good, but I'd like a human expert to add a professional touch.");
+
+                                            const typingIndicator = addTypingIndicator();
+
+                                            setTimeout(() => {
+                                                chatMessages.removeChild(typingIndicator);
+
+                                                // Create Fiverr sellers widget
+                                                const fiverrWidget = createFiverrSellersWidget();
+                                                addMessage('ai', "No problem! I've found some expert freelancers on Fiverr who specialize in this exact type of work. They can add that human creativity and expertise to take this to the next level:", fiverrWidget);
+                                            }, 1500);
+                                        }
+                                        else {
+                                            addMessage('user', "Yes, I'd like some changes.");
+
+                                            const typingIndicator = addTypingIndicator();
+
+                                            setTimeout(() => {
+                                                chatMessages.removeChild(typingIndicator);
+                                                addMessage('ai', `No problem! What specific adjustments would you like to make to Agent ${agentName}'s solution?`);
+                                            }, 1000);
+                                        }
+                                    });
+                                });
+                            }, 1000);
+                        }, 1500);
+                    }, 500);
+                });
+            });
+        }, 100);
+
+        return widget;
+    }
+
+    // Create discovery widget
+    function createDiscoveryWidget() {
+        const widget = document.createElement('div');
+        widget.className = 'message-widget discovery-widget';
+
+        const header = document.createElement('div');
+        header.className = 'widget-header';
+        header.innerHTML = `
+            <div class="widget-icon">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <div class="widget-title">New Territory Discovery</div>
+        `;
+
+        const content = document.createElement('div');
+        content.className = 'widget-content';
+        content.innerHTML = `
+            <div class="discovery-badge"><i class="fas fa-gift"></i> +$10 Credits Added</div>
+            <div class="discovery-description">
+                Your request is unique! We don't have an automated solution for this type of request yet. 
+                We've sent it to our developer community who will build automation for this request type.
+                <br><br>
+                <strong>You'll always be credited as the idea originator.</strong>
+            </div>
+            <div class="discovery-title"><i class="fas fa-user-tie"></i> Expert Freelancers for This Request</div>
+            <div class="freelancers-grid">
+                <div class="freelancer-card">
+                    <div class="freelancer-avatar" style="background-image: url('https://randomuser.me/api/portraits/women/63.jpg')">
+                        <div class="online-badge"></div>
+                    </div>
+                    <div class="freelancer-info">
+                        <h4>Jordan Rivera</h4>
+                        <p>Innovation Specialist</p>
+                        <div class="skill-tags">
+                            <span class="skill-tag">AI</span>
+                            <span class="skill-tag">Emerging Tech</span>
+                        </div>
+                    </div>
+                    <div class="rating">
+                        <div class="rating-stars">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <div class="rating-value">4.8</div>
+                        <div class="rating-count">(92)</div>
+                    </div>
+                </div>
+                <div class="freelancer-card">
+                    <div class="freelancer-avatar" style="background-image: url('https://randomuser.me/api/portraits/men/45.jpg')">
+                        <div class="online-badge"></div>
+                    </div>
+                    <div class="freelancer-info">
+                        <h4>Leo Zhang</h4>
+                        <p>Creative Problem Solver</p>
+                        <div class="skill-tags">
+                            <span class="skill-tag">Innovation</span>
+                            <span class="skill-tag">Strategy</span>
+                        </div>
+                    </div>
+                    <div class="rating">
+                        <div class="rating-stars">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                        <div class="rating-value">5.0</div>
+                        <div class="rating-count">(34)</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        widget.appendChild(header);
+        widget.appendChild(content);
+
+        // Add event listeners
+        setTimeout(() => {
+            widget.querySelectorAll('.freelancer-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const name = this.querySelector('h4').textContent;
+
+                    setTimeout(() => {
+                        addMessage('user', `I'd like to connect with ${name}.`);
+
+                        const typingIndicator = addTypingIndicator();
+
+                        setTimeout(() => {
+                            chatMessages.removeChild(typingIndicator);
+                            addMessage('ai', `Great choice! ${name} is an excellent specialist for your unique request. I'll arrange a connection right away. Would you like to talk now or schedule a meeting?`);
+
+                            // Add contact options
+                            const lastMsg = chatMessages.lastElementChild;
+                            const contactOptionsDiv = document.createElement('div');
+                            contactOptionsDiv.className = 'message-actions';
+                            contactOptionsDiv.innerHTML = `
+                                <button class="message-action-btn talk-now"><i class="fas fa-phone-alt"></i> Talk Now</button>
+                                <button class="message-action-btn schedule-meeting"><i class="fas fa-calendar-alt"></i> Schedule Meeting</button>
+                            `;
+
+                            lastMsg.querySelector('.message-content').appendChild(contactOptionsDiv);
+
+                            // Add event listeners for contact options
+                            contactOptionsDiv.querySelector('.talk-now').addEventListener('click', function() {
+                                addMessage('user', "I'd like to talk now.");
+
+                                // Show calling animation
+                                const callingWidget = createCallingWidget(name);
+                                addMessage('ai', `Connecting you with ${name}...`, callingWidget);
+                            });
+
+                            contactOptionsDiv.querySelector('.schedule-meeting').addEventListener('click', function() {
+                                addMessage('user', "I'd like to schedule a meeting.");
+
+                                // Show scheduling widget
+                                const schedulingWidget = createSchedulingWidget(name);
+                                addMessage('ai', `Let's find a time that works for you and ${name}:`, schedulingWidget);
+                            });
+                        }, 1500);
+                    }, 500);
+                });
+            });
+        }, 100);
+
+        return widget;
+    }
+
+    // Create Fiverr sellers widget
+    function createFiverrSellersWidget() {
+        const widget = document.createElement('div');
+        widget.className = 'message-widget';
+
+        const header = document.createElement('div');
+        header.className = 'widget-header';
+        header.innerHTML = `
+            <div class="widget-icon">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <div class="widget-title">Fiverr Specialists</div>
+        `;
+
+        const content = document.createElement('div');
+        content.className = 'widget-content';
+        content.innerHTML = `
+            <div class="freelancers-grid">
+                <div class="freelancer-card" data-name="Jordan Rivera">
+                    <div class="freelancer-avatar" style="background-image: url('https://randomuser.me/api/portraits/women/63.jpg')">
+                        <div class="online-badge"></div>
+                    </div>
+                    <div class="freelancer-info">
+                        <h4>Jordan Rivera</h4>
+                        <p>Top Rated Plus</p>
+                        <div class="skill-tags">
+                            <span class="skill-tag">Expert</span>
+                            <span class="skill-tag">Fast</span>
+                        </div>
+                    </div>
+                    <div class="rating">
+                        <div class="rating-stars">★★★★★</div>
+                        <div class="rating-value">5.0</div>
+                        <div class="rating-count">(112)</div>
+                    </div>
+                </div>
+                <div class="freelancer-card" data-name="Alex Chen">
+                    <div class="freelancer-avatar" style="background-image: url('https://randomuser.me/api/portraits/men/32.jpg')">
+                    </div>
+                    <div class="freelancer-info">
+                        <h4>Alex Chen</h4>
+                        <p>Level 2 Seller</p>
+                        <div class="skill-tags">
+                            <span class="skill-tag">Creative</span>
+                            <span class="skill-tag">Detailed</span>
+                        </div>
+                    </div>
+                    <div class="rating">
+                        <div class="rating-stars">★★★★★</div>
+                        <div class="rating-value">4.9</div>
+                        <div class="rating-count">(87)</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        widget.appendChild(header);
+        widget.appendChild(content);
+
+        // Add event listeners
+        setTimeout(() => {
+            widget.querySelectorAll('.freelancer-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const name = this.dataset.name;
+
+                    addMessage('user', `I'd like to work with ${name}.`);
+
+                    const typingIndicator = addTypingIndicator();
+
+                    setTimeout(() => {
+                        chatMessages.removeChild(typingIndicator);
+                        addMessage('ai', `Great choice! ${name} is an excellent specialist for your request. Would you like to talk now or schedule a meeting?`);
+
+                        // Add contact options
+                        const lastMsg = chatMessages.lastElementChild;
+                        const actionsDiv = document.createElement('div');
+                        actionsDiv.className = 'message-actions';
+                        actionsDiv.innerHTML = `
+                            <button class="message-action-btn talk-now"><i class="fas fa-phone-alt"></i> Talk Now</button>
+                            <button class="message-action-btn schedule-meeting"><i class="fas fa-calendar-alt"></i> Schedule Meeting</button>
+                        `;
+
+                        lastMsg.querySelector('.message-content').appendChild(actionsDiv);
+
+                        // Add event listeners
+                        actionsDiv.querySelector('.talk-now').addEventListener('click', function() {
+                            addMessage('user', "I'd like to talk now.");
+
+                            // Show calling animation
+                            const callingWidget = createCallingWidget(name);
+                            addMessage('ai', "Connecting you with " + name + "...", callingWidget);
+                        });
+
+                        actionsDiv.querySelector('.schedule-meeting').addEventListener('click', function() {
+                            addMessage('user', "I'd like to schedule a meeting.");
+
+                            // Show scheduling widget
+                            const schedulingWidget = createSchedulingWidget(name);
+                            addMessage('ai', "Let's find a time that works for you and " + name + ":", schedulingWidget);
+                        });
+                    }, 1000);
+                });
+            });
+        }, 100);
+
+        return widget;
+    }
+
+    // Create calling animation widget
+    function createCallingWidget(name) {
+        const widget = document.createElement('div');
+        widget.className = 'message-widget calling-widget';
+        widget.style.textAlign = 'center';
+        widget.style.padding = '1.5rem';
+
+        widget.innerHTML = `
+            <div class="calling-animation" style="margin-bottom: 1rem;">
+                <div class="freelancer-avatar" style="
+                    width: 80px;
+                    height: 80px;
+                    margin: 0 auto 1rem auto;
+                    background-image: url('https://randomuser.me/api/portraits/${name === 'Jordan Rivera' ? 'women/63.jpg' : 'men/32.jpg'}');
+                    border: 3px solid var(--primary-glow);
+                    position: relative;
+                ">
+                    <div class="call-rings"></div>
+                </div>
+                <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">${name}</div>
+                <div style="opacity: 0.7; margin-bottom: 1rem;">Calling...</div>
+            </div>
+            <button class="message-action-btn" style="
+                background-color: #f44336;
+                color: white;
+                margin: 0 auto;
+                width: auto;
+                display: inline-flex;
+            "><i class="fas fa-phone-slash" style="margin-right: 0.5rem;"></i> End Call</button>
+        `;
+
+        // Add end call event
+        setTimeout(() => {
+            widget.querySelector('button').addEventListener('click', function() {
+                // Replace with call ended message
+                widget.innerHTML = `
+                    <div style="font-size: 1rem; opacity: 0.7;">
+                        <i class="fas fa-check-circle" style="color: var(--success-color); margin-right: 0.5rem;"></i>
+                        Call ended. ${name} will follow up with a message shortly.
+                    </div>
+                `;
+            });
+        }, 100);
+
+        return widget;
+    }
+
+    // Create scheduling widget
+    function createSchedulingWidget(name) {
+        const widget = document.createElement('div');
+        widget.className = 'message-widget scheduling-widget';
+
+        // Generate dates for next 5 days
+        const dates = [];
+        for (let i = 1; i <= 5; i++) {
+            const date = new Date();
+            date.setDate(date.getDate() + i);
+            dates.push(date);
+        }
+
+        // Available time slots
+        const timeSlots = ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '5:00 PM'];
+
+        widget.innerHTML = `
+            <div style="margin-bottom: 1rem;">
+                <div style="font-weight: 600; margin-bottom: 0.5rem;">Select a Date:</div>
+                <div class="dates-row">
+                    ${dates.map(date => `
+                        <div class="date-option" data-date="${date.toISOString().split('T')[0]}">
+                            <div style="font-weight: 500;">${date.toLocaleDateString('en-US', {weekday: 'short'})}</div>
+                            <div style="font-size: 1.2rem; margin: 0.3rem 0;">${date.getDate()}</div>
+                            <div style="font-size: 0.8rem; opacity: 0.7;">${date.toLocaleDateString('en-US', {month: 'short'})}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="time-slots" style="margin-bottom: 1rem; display: none;">
+                <div style="font-weight: 600; margin-bottom: 0.5rem;">Select a Time:</div>
+                <div class="times-grid">
+                    ${timeSlots.map(time => `
+                        <div class="time-option" data-time="${time}">
+                            ${time}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <button class="generate-btn confirm-meeting" style="display: none;">
+                <i class="fas fa-calendar-check"></i> Confirm Meeting
+            </button>
+        `;
+
+        // Add event listeners
+        setTimeout(() => {
+            let selectedDate = null;
+            let selectedTime = null;
+
+            // Date selection
+            widget.querySelectorAll('.date-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    widget.querySelectorAll('.date-option').forEach(opt => {
+                        opt.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--card-border');
+                        opt.style.backgroundColor = '';
+                    });
+
+                    this.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-glow');
+                    this.style.backgroundColor = 'rgba(var(--primary-glow-rgb), 0.1)';
+
+                    selectedDate = this.dataset.date;
+                    widget.querySelector('.time-slots').style.display = 'block';
+
+                    // Reset time selection when date changes
+                    widget.querySelectorAll('.time-option').forEach(opt => {
+                        opt.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--card-border');
+                        opt.style.backgroundColor = '';
+                    });
+                    selectedTime = null;
+                    widget.querySelector('.confirm-meeting').style.display = 'none';
+                });
+            });
+
+            // Time selection
+            widget.querySelectorAll('.time-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    widget.querySelectorAll('.time-option').forEach(opt => {
+                        opt.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--card-border');
+                        opt.style.backgroundColor = '';
+                    });
+
+                    this.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-glow');
+                    this.style.backgroundColor = 'rgba(var(--primary-glow-rgb), 0.1)';
+
+                    selectedTime = this.dataset.time;
+                    widget.querySelector('.confirm-meeting').style.display = 'flex';
+                });
+            });
+
+            // Confirm meeting
+            widget.querySelector('.confirm-meeting').addEventListener('click', function() {
+                if (!selectedDate || !selectedTime) return;
+
+                const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                addMessage('user', `I'd like to schedule a meeting on ${formattedDate} at ${selectedTime}.`);
+
+                const typingIndicator = addTypingIndicator();
+
+                setTimeout(() => {
+                    chatMessages.removeChild(typingIndicator);
+                    addMessage('ai', `Perfect! I've scheduled your meeting with ${name} for ${formattedDate} at ${selectedTime}. You'll receive a calendar invitation and connection details via email. ${name} is looking forward to discussing your project!`);
+                }, 1000);
+            });
+        }, 100);
+
+        return widget;
+    }
+
+    // Helper function to get time string
+    function getTimeString() {
+        const now = new Date();
+        return now.getHours().toString().padStart(2, '0') + ':' + 
+               now.getMinutes().toString().padStart(2, '0');
+    }
+
+    // Helper function to get category name
+    function getCategoryName(categoryId) {
+        const categories = {
+            1: 'Development Services',
+            2: 'Content Creation',
+            3: 'Creative Services',
+            4: 'Business Solutions',
+            5: 'Financial Services'
+        };
+
+        return categories[categoryId] || 'Unknown Category';
+    }
+</script>
+</body>
+</html>

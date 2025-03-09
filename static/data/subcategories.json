@@ -1,0 +1,27 @@
+{
+    "1": [
+        { "id": 1, "name": "Web" },
+        { "id": 2, "name": "Mobile" },
+        { "id": 3, "name": "Software" }
+    ],
+    "2": [
+        { "id": 4, "name": "Copy" },
+        { "id": 5, "name": "Blog" },
+        { "id": 6, "name": "SEO" }
+    ],
+    "3": [
+        { "id": 7, "name": "Logo" },
+        { "id": 8, "name": "UI/UX" },
+        { "id": 9, "name": "Graphic" }
+    ],
+    "4": [
+        { "id": 10, "name": "Marketing" },
+        { "id": 11, "name": "Analytics" },
+        { "id": 12, "name": "Strategy" }
+    ],
+    "5": [
+        { "id": 13, "name": "Accounting" },
+        { "id": 14, "name": "Taxation" },
+        { "id": 15, "name": "Investment" }
+    ]
+}

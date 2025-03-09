@@ -1,0 +1,42 @@
+[
+    {
+        "id": 1,
+        "name": "Jordan Rivera",
+        "title": "Innovation Specialist",
+        "avatar": "https://randomuser.me/api/portraits/women/63.jpg",
+        "online": true,
+        "skills": ["AI", "Emerging Tech"],
+        "rating": 4.8,
+        "ratingCount": 92
+    },
+    {
+        "id": 2,
+        "name": "Leo Zhang",
+        "title": "Creative Problem Solver",
+        "avatar": "https://randomuser.me/api/portraits/men/45.jpg",
+        "online": true,
+        "skills": ["Innovation", "Strategy"],
+        "rating": 5.0,
+        "ratingCount": 34
+    },
+    {
+        "id": 3,
+        "name": "Alex Chen",
+        "title": "Level 2 Seller",
+        "avatar": "https://randomuser.me/api/portraits/men/32.jpg",
+        "online": false,
+        "skills": ["Creative", "Detailed"],
+        "rating": 4.9,
+        "ratingCount": 87
+    },
+    {
+        "id": 4,
+        "name": "Maya Johnson",
+        "title": "Full Stack Developer",
+        "avatar": "https://randomuser.me/api/portraits/women/44.jpg",
+        "online": true,
+        "skills": ["React", "Node.js", "Python"],
+        "rating": 4.7,
+        "ratingCount": 113
+    }
+]
