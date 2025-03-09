@@ -399,11 +399,40 @@ function handleLogoRequest(requestText) {
                 const solutionWidget = createSolutionWidget();
                 addMessage('ai', "Thanks for the details! I'm generating logo designs from our top AI agents now.", solutionWidget);
 
-                // Simulate solution progress
-                simulateSolutionProgress(solutionWidget, () => {
-                    // Show delivery options with 4 agents specifically for logos
-                    const deliveryWidget = createAgentDeliveryWidget(3, true, name); // Creative category, logo specific
-                    addMessage('ai', "Your logo designs are ready! Our 4 AI design agents have each created a different concept. Please select the one you prefer:", deliveryWidget);
+                // Send the logo details to the server
+                // In a real app, we would store these details for future reference
+                fetch('/api/analyze_request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        text: `${style} logo for ${name} in ${industry} with ${color} colors`,
+                        type: 'logo',
+                        details: {
+                            industry: industry,
+                            companyName: name,
+                            color: color,
+                            style: style
+                        }
+                    }),
+                })
+                .then(() => {
+                    // Continue with solution progress regardless of response
+                    // Simulate solution progress
+                    simulateSolutionProgress(solutionWidget, () => {
+                        // Show delivery options with 4 agents specifically for logos
+                        const deliveryWidget = createAgentDeliveryWidget(3, true, name); // Creative category, logo specific
+                        addMessage('ai', "Your logo designs are ready! Our 4 AI design agents have each created a different concept. Please select the one you prefer:", deliveryWidget);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error storing logo details:', error);
+                    // Continue with solution progress even if there was an error
+                    simulateSolutionProgress(solutionWidget, () => {
+                        const deliveryWidget = createAgentDeliveryWidget(3, true, name);
+                        addMessage('ai', "Your logo designs are ready! Our 4 AI design agents have each created a different concept. Please select the one you prefer:", deliveryWidget);
+                    });
                 });
             });
         }, 100);

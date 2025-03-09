@@ -105,8 +105,8 @@ function analyzeRequest(requestText) {
     // Add typing indicator
     const typingIndicator = addTypingIndicator();
 
-    // Send request to backend for analysis
-    fetch('/api/analyze_request', {
+    // First check if this is known territory
+    fetch('/api/is_known_territory', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ function analyzeRequest(requestText) {
         body: JSON.stringify({ text: requestText }),
     })
     .then(response => response.json())
-    .then(data => {
+    .then(knownData => {
         // Remove typing indicator
         chatMessages.removeChild(typingIndicator);
         
@@ -127,11 +127,33 @@ function analyzeRequest(requestText) {
         // Add message with widget
         addMessage('ai', "Searching our AI agent network for the perfect solution for you...", neuralWidget);
 
-        // Simulate neural network analysis
-        simulateNeuralNetworkAnalysis(requestText, neuralWidget, data.responseType, data.categoryId);
+        // If territory is known, use that data directly
+        if (knownData.known) {
+            const responseType = knownData.partial ? 'partial' : 'match';
+            // Simulate neural network analysis with more detailed knowledge
+            simulateNeuralNetworkAnalysis(requestText, neuralWidget, responseType, knownData.categoryId);
+        } else {
+            // If not known, fall back to simpler analysis
+            fetch('/api/analyze_request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: requestText }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Simulate neural network analysis with basic analysis
+                simulateNeuralNetworkAnalysis(requestText, neuralWidget, data.responseType, data.categoryId);
+            })
+            .catch(error => {
+                console.error('Error in analyze_request:', error);
+                addMessage('ai', "I'm sorry, there was an error during analysis. Please try again.");
+            });
+        }
     })
     .catch(error => {
-        console.error('Error:', error);
+        console.error('Error in is_known_territory:', error);
         chatMessages.removeChild(typingIndicator);
         addMessage('ai', "I'm sorry, there was an error processing your request. Please try again.");
     });

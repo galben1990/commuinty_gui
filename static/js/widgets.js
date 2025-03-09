@@ -269,7 +269,12 @@ function createDiscoveryWidget() {
 
     const content = document.createElement('div');
     content.className = 'widget-content';
+    
+    // Show loading state initially
     content.innerHTML = `
+        <div class="loading-indicator">
+            <i class="fas fa-spinner fa-spin"></i> Finding freelancers for your request...
+        </div>
         <div class="discovery-badge"><i class="fas fa-gift"></i> +$10 Credits Added</div>
         <div class="discovery-description">
             Your request is unique! We don't have an automated solution for this type of request yet. 
@@ -278,68 +283,58 @@ function createDiscoveryWidget() {
             <strong>You'll always be credited as the idea originator.</strong>
         </div>
         <div class="discovery-title"><i class="fas fa-user-tie"></i> Expert Freelancers for This Request</div>
-        <div class="freelancers-grid">
-            <div class="freelancer-card">
-                <div class="freelancer-avatar" style="background-image: url('https://randomuser.me/api/portraits/women/63.jpg')">
-                    <div class="online-badge"></div>
-                </div>
-                <div class="freelancer-info">
-                    <h4>Jordan Rivera</h4>
-                    <p>Innovation Specialist</p>
-                    <div class="skill-tags">
-                        <span class="skill-tag">AI</span>
-                        <span class="skill-tag">Emerging Tech</span>
-                    </div>
-                </div>
-                <div class="rating">
-                    <div class="rating-stars">
-                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-                    </div>
-                    <div class="rating-value">4.8</div>
-                    <div class="rating-count">(92)</div>
-                </div>
-            </div>
-            <div class="freelancer-card">
-                <div class="freelancer-avatar" style="background-image: url('https://randomuser.me/api/portraits/men/45.jpg')">
-                    <div class="online-badge"></div>
-                </div>
-                <div class="freelancer-info">
-                    <h4>Leo Zhang</h4>
-                    <p>Creative Problem Solver</p>
-                    <div class="skill-tags">
-                        <span class="skill-tag">Innovation</span>
-                        <span class="skill-tag">Strategy</span>
-                    </div>
-                </div>
-                <div class="rating">
-                    <div class="rating-stars">
-                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                    </div>
-                    <div class="rating-value">5.0</div>
-                    <div class="rating-count">(34)</div>
-                </div>
-            </div>
-        </div>
     `;
 
     widget.appendChild(header);
     widget.appendChild(content);
 
-    // Add event listeners
-    setTimeout(() => {
-        widget.querySelectorAll('.freelancer-card').forEach(card => {
-            card.addEventListener('click', function() {
-                const name = this.querySelector('h4').textContent;
-
-                setTimeout(() => {
+    // Fetch freelancers from API
+    fetch('/api/discovery_freelancers')
+        .then(response => response.json())
+        .then(freelancers => {
+            // Create freelancers grid
+            const freelancersGrid = document.createElement('div');
+            freelancersGrid.className = 'freelancers-grid';
+            
+            freelancers.forEach(freelancer => {
+                const card = document.createElement('div');
+                card.className = 'freelancer-card';
+                card.setAttribute('data-name', freelancer.name);
+                
+                card.innerHTML = `
+                    <div class="freelancer-avatar" style="background-image: url('${freelancer.avatar}')">
+                        ${freelancer.online ? '<div class="online-badge"></div>' : ''}
+                    </div>
+                    <div class="freelancer-info">
+                        <h4>${freelancer.name}</h4>
+                        <p>${freelancer.title}</p>
+                        <div class="skill-tags">
+                            ${freelancer.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="rating">
+                        <div class="rating-stars">
+                            ${'★'.repeat(Math.floor(freelancer.rating))}${freelancer.rating % 1 >= 0.5 ? '★' : ''}
+                        </div>
+                        <div class="rating-value">${freelancer.rating}</div>
+                        <div class="rating-count">(${freelancer.ratingCount})</div>
+                    </div>
+                `;
+                
+                freelancersGrid.appendChild(card);
+                
+                // Add click event listener
+                card.addEventListener('click', function() {
+                    const name = this.getAttribute('data-name');
+                    
                     addMessage('user', `I'd like to connect with ${name}.`);
-
+                    
                     const typingIndicator = addTypingIndicator();
-
+                    
                     setTimeout(() => {
                         chatMessages.removeChild(typingIndicator);
                         addMessage('ai', `Great choice! ${name} is an excellent specialist for your unique request. I'll arrange a connection right away. Would you like to talk now or schedule a meeting?`);
-
+                        
                         // Add contact options
                         const lastMsg = chatMessages.lastElementChild;
                         const contactOptionsDiv = document.createElement('div');
@@ -348,30 +343,39 @@ function createDiscoveryWidget() {
                             <button class="message-action-btn talk-now"><i class="fas fa-phone-alt"></i> Talk Now</button>
                             <button class="message-action-btn schedule-meeting"><i class="fas fa-calendar-alt"></i> Schedule Meeting</button>
                         `;
-
+                        
                         lastMsg.querySelector('.message-content').appendChild(contactOptionsDiv);
-
+                        
                         // Add event listeners for contact options
                         contactOptionsDiv.querySelector('.talk-now').addEventListener('click', function() {
                             addMessage('user', "I'd like to talk now.");
-
+                            
                             // Show calling animation
                             const callingWidget = createCallingWidget(name);
                             addMessage('ai', `Connecting you with ${name}...`, callingWidget);
                         });
-
+                        
                         contactOptionsDiv.querySelector('.schedule-meeting').addEventListener('click', function() {
                             addMessage('user', "I'd like to schedule a meeting.");
-
+                            
                             // Show scheduling widget
                             const schedulingWidget = createSchedulingWidget(name);
                             addMessage('ai', `Let's find a time that works for you and ${name}:`, schedulingWidget);
                         });
                     }, 1500);
-                }, 500);
+                });
             });
+            
+            // Remove loading indicator and append freelancers grid
+            content.querySelector('.loading-indicator').remove();
+            content.appendChild(freelancersGrid);
+        })
+        .catch(error => {
+            console.error('Error fetching discovery freelancers:', error);
+            content.querySelector('.loading-indicator').innerHTML = `
+                <div class="error-message">Error loading freelancers. Please try again.</div>
+            `;
         });
-    }, 100);
 
     return widget;
 }
@@ -393,93 +397,103 @@ function createFiverrSellersWidget() {
     const content = document.createElement('div');
     content.className = 'widget-content';
     content.innerHTML = `
-        <div class="freelancers-grid">
-            <div class="freelancer-card" data-name="Jordan Rivera">
-                <div class="freelancer-avatar" style="background-image: url('https://randomuser.me/api/portraits/women/63.jpg')">
-                    <div class="online-badge"></div>
-                </div>
-                <div class="freelancer-info">
-                    <h4>Jordan Rivera</h4>
-                    <p>Top Rated Plus</p>
-                    <div class="skill-tags">
-                        <span class="skill-tag">Expert</span>
-                        <span class="skill-tag">Fast</span>
-                    </div>
-                </div>
-                <div class="rating">
-                    <div class="rating-stars">★★★★★</div>
-                    <div class="rating-value">5.0</div>
-                    <div class="rating-count">(112)</div>
-                </div>
-            </div>
-            <div class="freelancer-card" data-name="Alex Chen">
-                <div class="freelancer-avatar" style="background-image: url('https://randomuser.me/api/portraits/men/32.jpg')">
-                </div>
-                <div class="freelancer-info">
-                    <h4>Alex Chen</h4>
-                    <p>Level 2 Seller</p>
-                    <div class="skill-tags">
-                        <span class="skill-tag">Creative</span>
-                        <span class="skill-tag">Detailed</span>
-                    </div>
-                </div>
-                <div class="rating">
-                    <div class="rating-stars">★★★★★</div>
-                    <div class="rating-value">4.9</div>
-                    <div class="rating-count">(87)</div>
-                </div>
-            </div>
+        <div class="loading-indicator">
+            <i class="fas fa-spinner fa-spin"></i> Finding the best specialists for you...
         </div>
     `;
 
     widget.appendChild(header);
     widget.appendChild(content);
 
-    // Add event listeners
-    setTimeout(() => {
-        widget.querySelectorAll('.freelancer-card').forEach(card => {
-            card.addEventListener('click', function() {
-                const name = this.dataset.name;
-
-                addMessage('user', `I'd like to work with ${name}.`);
-
-                const typingIndicator = addTypingIndicator();
-
-                setTimeout(() => {
-                    chatMessages.removeChild(typingIndicator);
-                    addMessage('ai', `Great choice! ${name} is an excellent specialist for your request. Would you like to talk now or schedule a meeting?`);
-
-                    // Add contact options
-                    const lastMsg = chatMessages.lastElementChild;
-                    const actionsDiv = document.createElement('div');
-                    actionsDiv.className = 'message-actions';
-                    actionsDiv.innerHTML = `
-                        <button class="message-action-btn talk-now"><i class="fas fa-phone-alt"></i> Talk Now</button>
-                        <button class="message-action-btn schedule-meeting"><i class="fas fa-calendar-alt"></i> Schedule Meeting</button>
-                    `;
-
-                    lastMsg.querySelector('.message-content').appendChild(actionsDiv);
-
-                    // Add event listeners
-                    actionsDiv.querySelector('.talk-now').addEventListener('click', function() {
-                        addMessage('user', "I'd like to talk now.");
-
-                        // Show calling animation
-                        const callingWidget = createCallingWidget(name);
-                        addMessage('ai', "Connecting you with " + name + "...", callingWidget);
-                    });
-
-                    actionsDiv.querySelector('.schedule-meeting').addEventListener('click', function() {
-                        addMessage('user', "I'd like to schedule a meeting.");
-
-                        // Show scheduling widget
-                        const schedulingWidget = createSchedulingWidget(name);
-                        addMessage('ai', "Let's find a time that works for you and " + name + ":", schedulingWidget);
-                    });
-                }, 1000);
+    // Fetch sellers from API
+    fetch('/api/fiverr_sellers')
+        .then(response => response.json())
+        .then(sellers => {
+            const sellersGrid = document.createElement('div');
+            sellersGrid.className = 'freelancers-grid';
+            
+            sellers.forEach(seller => {
+                // Add Fiverr-specific titles and tags
+                const sellerTitle = seller.id % 2 === 0 ? 'Level 2 Seller' : 'Top Rated Plus';
+                const skillTags = ['Expert', 'Fast', 'Creative', 'Detailed'].sort(() => 0.5 - Math.random()).slice(0, 2);
+                
+                const card = document.createElement('div');
+                card.className = 'freelancer-card';
+                card.setAttribute('data-name', seller.name);
+                
+                card.innerHTML = `
+                    <div class="freelancer-avatar" style="background-image: url('${seller.avatar}')">
+                        ${seller.online ? '<div class="online-badge"></div>' : ''}
+                    </div>
+                    <div class="freelancer-info">
+                        <h4>${seller.name}</h4>
+                        <p>${sellerTitle}</p>
+                        <div class="skill-tags">
+                            ${skillTags.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="rating">
+                        <div class="rating-stars">★★★★★</div>
+                        <div class="rating-value">${seller.rating.toFixed(1)}</div>
+                        <div class="rating-count">(${seller.ratingCount})</div>
+                    </div>
+                `;
+                
+                sellersGrid.appendChild(card);
+                
+                // Add click event listener
+                card.addEventListener('click', function() {
+                    const name = this.getAttribute('data-name');
+                    
+                    addMessage('user', `I'd like to work with ${name}.`);
+                    
+                    const typingIndicator = addTypingIndicator();
+                    
+                    setTimeout(() => {
+                        chatMessages.removeChild(typingIndicator);
+                        addMessage('ai', `Great choice! ${name} is an excellent specialist for your request. Would you like to talk now or schedule a meeting?`);
+                        
+                        // Add contact options
+                        const lastMsg = chatMessages.lastElementChild;
+                        const actionsDiv = document.createElement('div');
+                        actionsDiv.className = 'message-actions';
+                        actionsDiv.innerHTML = `
+                            <button class="message-action-btn talk-now"><i class="fas fa-phone-alt"></i> Talk Now</button>
+                            <button class="message-action-btn schedule-meeting"><i class="fas fa-calendar-alt"></i> Schedule Meeting</button>
+                        `;
+                        
+                        lastMsg.querySelector('.message-content').appendChild(actionsDiv);
+                        
+                        // Add event listeners
+                        actionsDiv.querySelector('.talk-now').addEventListener('click', function() {
+                            addMessage('user', "I'd like to talk now.");
+                            
+                            // Show calling animation
+                            const callingWidget = createCallingWidget(name);
+                            addMessage('ai', `Connecting you with ${name}...`, callingWidget);
+                        });
+                        
+                        actionsDiv.querySelector('.schedule-meeting').addEventListener('click', function() {
+                            addMessage('user', "I'd like to schedule a meeting.");
+                            
+                            // Show scheduling widget
+                            const schedulingWidget = createSchedulingWidget(name);
+                            addMessage('ai', `Let's find a time that works for you and ${name}:`, schedulingWidget);
+                        });
+                    }, 1000);
+                });
             });
+            
+            // Replace loading indicator with sellers grid
+            content.innerHTML = '';
+            content.appendChild(sellersGrid);
+        })
+        .catch(error => {
+            console.error('Error fetching Fiverr sellers:', error);
+            content.innerHTML = `
+                <div class="error-message">Error loading specialists. Please try again.</div>
+            `;
         });
-    }, 100);
 
     return widget;
 }
